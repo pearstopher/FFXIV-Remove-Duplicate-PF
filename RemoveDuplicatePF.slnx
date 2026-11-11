@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="RemoveDuplicatePF.Core/RemoveDuplicatePF.Core.csproj" />
+  <Project Path="RemoveDuplicatePF.Tests/RemoveDuplicatePF.Tests.csproj" />
   <Project Path="RemoveDuplicatePF/RemoveDuplicatePF.csproj">
     <Platform Project="x64" />
   </Project>
