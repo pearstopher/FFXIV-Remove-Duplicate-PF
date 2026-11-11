@@ -72,6 +72,13 @@ public sealed class DuplicateTracker
     public IReadOnlyDictionary<ulong, int> DuplicateGroups =>
         this.groupSizeByKeptId.Where(g => g.Value > 1).ToDictionary(g => g.Key, g => g.Value);
 
+    /// <summary>Descriptions of groups that have duplicates, with their group sizes.</summary>
+    public IReadOnlyDictionary<string, int> DuplicateGroupsByDescription =>
+        this.keptByDescription
+            .Select(kv => (kv.Key, Size: this.groupSizeByKeptId[kv.Value]))
+            .Where(g => g.Size > 1)
+            .ToDictionary(g => g.Key, g => g.Size, StringComparer.Ordinal);
+
     /// <summary>Clears all state, ready for a new result set.</summary>
     public void Reset()
     {

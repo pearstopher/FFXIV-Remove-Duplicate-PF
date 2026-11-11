@@ -6,15 +6,15 @@ namespace RemoveDuplicatePF;
 
 /// <summary>
 /// Connects Dalamud's Party Finder listing event to <see cref="ListingFilter"/>.
-/// This is the only place the plugin touches the game: it only changes
-/// <c>args.Visible</c> on incoming Party Finder listings.
+/// It only changes <c>args.Visible</c> on incoming Party Finder listings.
 /// </summary>
 internal sealed class PartyFinderListener : IDisposable
 {
-    private readonly ListingFilter filter = new();
+    private readonly ListingFilter filter;
 
-    public PartyFinderListener()
+    public PartyFinderListener(ListingFilter filter)
     {
+        this.filter = filter;
         Plugin.PartyFinderGui.ReceiveListing += this.OnReceiveListing;
     }
 

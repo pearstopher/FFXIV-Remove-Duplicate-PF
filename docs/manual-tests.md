@@ -57,3 +57,20 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
 ### Also record
 
 - [ ] Did any result set arrive as a single segment numbered 0? The code handles it, but it isn't confirmed in game.
+
+## Coloured [N] prefix (#9)
+
+1. Open a busy category with duplicates (as in the #7 steps).
+   - **Expected:** each listing that stands in for a duplicate group shows a coloured `[N]` at the start of its description, where N is the number of identical listings (including itself). The colour differs from the normal description text.
+2. Look at listings that have no duplicates.
+   - **Expected:** no `[N]` prefix.
+3. Scroll the list up and down several times, and switch between the standard and compact list views if available.
+   - **Expected:** prefixes stay on the right listings, never stack (no `[3] [3] …`), and never appear on a listing without duplicates.
+4. Refresh, change category, and change page.
+   - **Expected:** prefixes update to match the new results; stale counts don't stay on screen.
+5. With Party Finder open, disable the plugin in `/xlplugins`.
+   - **Expected:** the `[N]` prefixes disappear straight away (hidden duplicates come back on the next refresh).
+6. With Debug+ logging, check for `PF prefix: X rows matched for Y duplicate groups` lines.
+   - **Expected:** X is roughly equal to Y while the matching rows are on screen. **If X stays 0 while there are duplicate groups,** the row text doesn't match the descriptions. Report it, and note what a duplicate's row looks like (a screenshot helps).
+7. Open a prefixed listing's details.
+   - **Expected:** the details window shows the original description without the prefix (expected and fine).

@@ -104,6 +104,20 @@ public class DuplicateTrackerTests
     }
 
     [Fact]
+    public void Duplicate_groups_by_description_lists_only_groups_with_duplicates()
+    {
+        this.tracker.Observe(1, "A");
+        this.tracker.Observe(2, "A");
+        this.tracker.Observe(3, "B");
+        this.tracker.Observe(4, "");
+
+        Assert.Equal(new Dictionary<string, int> { ["A"] = 2 }, this.tracker.DuplicateGroupsByDescription);
+
+        this.tracker.Reset();
+        Assert.Empty(this.tracker.DuplicateGroupsByDescription);
+    }
+
+    [Fact]
     public void Unknown_listing_has_group_size_zero()
     {
         Assert.Equal(0, this.tracker.GroupSize(42));
