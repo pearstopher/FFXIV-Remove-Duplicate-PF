@@ -29,13 +29,14 @@ Each finding is marked **Confirmed (source)** when it was read in code, or **To 
 - `args.BatchNumber` is the packet's `SegmentIndex`. ClientStructs documents it as: *"Starts at 1, counts up, ends with 0"*. So:
   - `BatchNumber == 1` means **a new result set has started** (a new search, refresh, category change or page). This is the reset signal for #8.
   - `BatchNumber == 0` means **the last segment** of the result set. This is the signal that the page is complete, used for title updates (#10).
-  - **To verify in game:** that every refresh and page change starts at 1, and that the final segment is always 0, including when there are 4 or fewer results.
+  - **Confirmed in game (2026-11-11):** 14 result sets (refreshes, category changes, pages) all started at 1 and ended at 0. A full page is segments 1–12 then 0. Shorter pages (10 and 26 listings) follow the same pattern (`1, 2, 0` and `1…6, 0`). No set arrived as a lone segment 0, but `ResultSetBoundary` (#8) handles that case anyway.
 - Fields available on `IPartyFinderListing` include `Id` (server listing ID), `ContentId`, `Name`, `Description` (`SeString`), `Category`, `Duty`, `SecondsRemaining`, `World`, `HomeWorld`, and `LastPatchHotfixTimestamp`.
 
 ### Pages and refreshes
 
-- The game's agent holds the IDs of the listings currently shown in a 50-entry array (`AgentLookingForGroup.ListingsSub._listingIds`). That suggests **a page shows up to 50 listings**, sent as about 13 segments of 4. **To verify in game.**
-- Each page, refresh and category change is a new request to the server, and the response arrives as a new set of segments starting at `BatchNumber == 1`. The plugin only ever sees **the listings on the page being shown**. **To verify in game** (log the batch numbers while paging).
+- The game's agent holds the IDs of the listings currently shown in a 50-entry array (`AgentLookingForGroup.ListingsSub._listingIds`). **Confirmed in game:** a page holds up to **50 listings**, sent as 13 segments (12 × 4, then 2 in the final segment 0).
+- Each page, refresh and category change is a new request to the server, and the response arrives as a new set of segments starting at `BatchNumber == 1`. The plugin only ever sees **the listings on the page being shown**. **Confirmed in game.**
+- **Arrival order (in game):** listings arrive sorted by `SecondsRemaining`, ascending. In each 50-listing page, 48 of 49 consecutive pairs were in order. This is consistent with the window's own sort, which supports the decision to keep the first listing in display order (#5).
 
 ## 2. Hiding a listing
 
@@ -130,9 +131,10 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 
 ## Verification checklist for the first in-game session
 
-Add a temporary debug log (in #5 or #7) and record the answers here:
+Answered from the Debug log of the 2026-11-11 session (11:56–12:05), unless marked open:
 
-- [ ] `BatchNumber` sequence for a refresh, a category change and a page change (does it always start at 1 and end at 0?)
-- [ ] Page size (is it 50?)
-- [ ] Arrival order matches the order shown in the window (needed so the first-arrived listing is the first displayed)
-- [ ] Current title and subtitle text of the `LookingForGroup` window, and whether the game resets them on refresh
+- [x] `BatchNumber` sequence: always `1, 2, …, 0` for refreshes, category changes and pages (section 1)
+- [x] Page size: 50 (section 1)
+- [x] Arrival order: sorted by time remaining, consistent with the window's order (section 1). The owner also confirmed that the kept listings and `[N]` prefixes appear on the right rows (#9).
+- [x] Row text matching for `[N]` (#9): works. `PF prefix: X rows matched` showed 1–3 on-screen rows matched for up to 7 groups; only rows currently on screen exist as text nodes.
+- [ ] **Open (for #10):** current title and subtitle text of the `LookingForGroup` window, and whether the game resets them on refresh
