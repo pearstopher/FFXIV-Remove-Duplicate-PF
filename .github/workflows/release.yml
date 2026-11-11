@@ -1,0 +1,63 @@
+name: Release
+
+# Pushing a tag like v1.2.3 builds the plugin, publishes a GitHub Release with
+# latest.zip, and updates repo.json on main (the custom repo players add in game).
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download Dalamud
+        shell: pwsh
+        run: |
+          $dalamudHome = Join-Path $env:RUNNER_TEMP "dalamud"
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
+          Expand-Archive -Force latest.zip $dalamudHome
+          "DALAMUD_HOME=$dalamudHome" >> $env:GITHUB_ENV
+
+      - name: Work out the version from the tag
+        shell: pwsh
+        run: |
+          # v1.2.3 -> 1.2.3.0 (Dalamud uses four-part assembly versions)
+          $version = "$env:GITHUB_REF_NAME".TrimStart('v') + ".0"
+          "PLUGIN_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Build
+        run: dotnet build --configuration Release -p:Version=${{ env.PLUGIN_VERSION }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish GitHub Release
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" RemoveDuplicatePF/bin/x64/Release/RemoveDuplicatePF/latest.zip --title "Remove Duplicate PF ${{ github.ref_name }}" --generate-notes
+
+      - name: Update repo.json on main
+        shell: pwsh
+        run: |
+          git fetch origin main
+          git checkout -B main origin/main
+          python .github/scripts/make_repo_json.py RemoveDuplicatePF/bin/x64/Release/RemoveDuplicatePF.json "$env:GITHUB_REF_NAME" "$env:GITHUB_REPOSITORY" repo.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add repo.json
+          git commit -m "Update repo.json for $env:GITHUB_REF_NAME [skip ci]"
+          git push origin main

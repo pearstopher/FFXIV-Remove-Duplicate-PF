@@ -4,7 +4,8 @@
     <ProjectReference Include="..\RemoveDuplicatePF.Core\RemoveDuplicatePF.Core.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <Version>0.0.0.1</Version>
+    <!-- Local builds use this. Releases override it from the tag (v1.2.3 -> 1.2.3.0), see .github/workflows/release.yml. -->
+    <Version>1.0.0.0</Version>
     <!-- Manifest fields (see https://github.com/goatcorp/DalamudPackager) -->
     <Author>pearstopher</Author>
     <Name>Remove Duplicate PF</Name>
