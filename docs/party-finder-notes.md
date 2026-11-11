@@ -124,10 +124,22 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 
 ## Other notes for later issues
 
-- **Matching key (#5, changed in #42):** use `listing.Description.TextValue` (the text players see), compared ordinally on its **first 30 characters** (`DescriptionMatch.Key`); shorter descriptions must match in full. The Debug log prints the same key, so listings that look identical in the log are always combined. Keep the matching function in Core with unit tests for whitespace, colour payloads and auto-translate. Whether to group across categories when viewing "All" is a #5 decision. The PROJECT.md wording ("exact same text") implies yes.
+- **Matching key (#5, changed in #42):** use `listing.Description.TextValue` (the text players see), compared ordinally on its **first 30 characters** (`DescriptionMatch.Key`); shorter descriptions must match in full. See "Design decision: match on the first 30 characters" below. Keep the matching function in Core with unit tests for whitespace, colour payloads and auto-translate. Whether to group across categories when viewing "All" is a #5 decision. The PROJECT.md wording ("exact same text") implies yes.
 - **NoSoliciting resets on every batch change.** It clears its history whenever `BatchNumber` changes, which is every segment, so it isn't a model for per-page tracking. Reset on `BatchNumber == 1` instead.
 - **Detail view:** opening a listing loads its full details separately (`AgentLookingForGroup.Detailed`). The `[N]` prefix won't appear there, which is acceptable.
 - **Main thread:** `ReceiveListing` runs on the game's network-handling path. Keep the handler fast and allocation-light, with no blocking calls.
+
+## Design decision: match on the first 30 characters (#42)
+
+**Decided by the owner on 2026-11-11, replacing the original "exact same text" rule from #5.**
+
+**Rule.** Two listings are duplicates when their descriptions start with the **same 30 characters** (ordinal, case-sensitive, compared on the text players see). Descriptions shorter than 30 characters must match in full. Empty or whitespace-only descriptions are never combined. The constant is `DescriptionMatch.Length` in Core.
+
+**Why 30, and why from the log.** The plugin's Debug log records the first 30 characters of each listing (`PF batch=… text=…`), and testing is done by reading that log. Under the exact-match rule, the first test session showed listings that looked identical in the log but weren't combined, because their text differed after character 30. There was no way to tell from the log whether that was correct. Matching on exactly what the log shows removes that ambiguity: **if two listings look identical in the log, they are combined**, so results can be checked straight from the log. The log and the rule both use `DescriptionMatch.Key`, so they can't drift apart.
+
+**Accepted consequence: different ads with the same opening are merged.** Two ads that start with the same 30 characters are combined **even if the rest of their text is different**. This is intentional. An ad whose first 30 characters are the same as another ad's isn't unique enough to deserve its own row: it's boilerplate (a shared venue or FC header, a copied template, the same ad reposted with a different time or room number). Merging these is the desired behaviour, not a bug. The kept listing shows its own full text, and the `[N]` count includes the merged ads.
+
+**Not affected:** ads shorter than 30 characters still need an exact match. For example, "Join our FC!" is not merged with "Join our FC! Discord: abc", because the shorter one doesn't have 30 characters to compare.
 
 ## Verification checklist for the first in-game session
 
