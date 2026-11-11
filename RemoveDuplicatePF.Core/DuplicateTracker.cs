@@ -29,6 +29,12 @@ public sealed class DuplicateTracker
     public int DuplicateGroupCount => this.groupSizeByKeptId.Count(g => g.Value > 1);
 
     /// <summary>
+    /// Total listings in duplicate groups, including the one kept in each group. This equals
+    /// the sum of the <c>[N]</c> prefixes, and is the number shown in the window title (#64).
+    /// </summary>
+    public int DuplicateListingCount => this.groupSizeByKeptId.Values.Where(size => size > 1).Sum();
+
+    /// <summary>
     /// Records a listing and returns whether it should be shown.
     /// Observing the same listing ID again returns the original decision
     /// without changing any counts.
