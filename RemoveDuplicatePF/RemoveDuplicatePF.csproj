@@ -6,9 +6,9 @@
   </ItemGroup>
   <PropertyGroup>
     <!-- Local builds use this. Releases override it from the tag (v1.2.3 -> 1.2.3.0), see .github/workflows/release.yml. -->
-    <Version>1.1.1.0</Version>
+    <Version>1.1.2.0</Version>
     <!-- Manifest fields (see https://github.com/goatcorp/DalamudPackager) -->
-    <Author>pearstopher</Author>
+    <Author>Ane Mora</Author>
     <Name>Remove Duplicate PF</Name>
     <Punchline>Collapses duplicate Party Finder listings into one.</Punchline>
     <!-- &#10;&#10; puts a blank line before the last sentence in the plugin installer (#66). -->
