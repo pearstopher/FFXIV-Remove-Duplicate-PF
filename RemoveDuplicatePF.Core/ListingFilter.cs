@@ -50,12 +50,16 @@ public sealed class ListingFilter
         if (this.boundary.IsNewResultSet(batchNumber, listingId))
             this.StartNewSet();
 
+        var set = this.history.First!.Value;
+        set.Received++;
+
         // Never un-hide another plugin's decision, and don't let a listing the
         // player won't see become the kept copy of a group.
         if (!currentlyVisible)
+        {
+            set.HiddenByOthers++;
             return false;
-
-        var set = this.history.First!.Value;
+        }
         var visible = set.Tracker.Observe(listingId, description);
         if (visible)
             set.ShownIds.Add(listingId);
@@ -88,6 +92,16 @@ public sealed class ListingFilter
         return new DisplayedResultSet(best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap);
     }
 
+    /// <summary>A summary of the newest result set, for the Debug log (#11).</summary>
+    public ResultSetSummary NewestSummary
+    {
+        get
+        {
+            var set = this.history.First!.Value;
+            return new ResultSetSummary(set.Number, set.Received, set.HiddenByOthers, set.Tracker);
+        }
+    }
+
     private void StartNewSet()
     {
         this.history.AddFirst(new ResultSet(this.nextSetNumber++));
@@ -103,6 +117,11 @@ public sealed class ListingFilter
 
         // Listings this result set left visible (kept copies and listings without duplicates).
         public HashSet<ulong> ShownIds { get; } = new();
+
+        // All listings received in this result set, and how many another plugin had already hidden.
+        public int Received { get; set; }
+
+        public int HiddenByOthers { get; set; }
     }
 }
 

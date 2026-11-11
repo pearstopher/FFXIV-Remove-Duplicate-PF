@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Dalamud.Game.Gui.PartyFinder.Types;
 using RemoveDuplicatePF.Core;
 
@@ -12,6 +13,12 @@ internal sealed class PartyFinderListener : IDisposable
 {
     private readonly ListingFilter filter;
 
+    // Cancels a pending summary log if the plugin unloads first.
+    private readonly CancellationTokenSource disposed = new();
+
+    // Result set whose summary is already scheduled, so it's logged once.
+    private int summaryScheduledFor = -1;
+
     public PartyFinderListener(ListingFilter filter)
     {
         this.filter = filter;
@@ -21,29 +28,34 @@ internal sealed class PartyFinderListener : IDisposable
     public void Dispose()
     {
         Plugin.PartyFinderGui.ReceiveListing -= this.OnReceiveListing;
+        this.disposed.Cancel();
+        this.disposed.Dispose();
     }
 
     private void OnReceiveListing(IPartyFinderListing listing, IPartyFinderListingEventArgs args)
     {
         try
         {
-            var description = listing.Description.TextValue;
-            var visible = this.filter.Decide(args.BatchNumber, listing.Id, description, args.Visible);
-            args.Visible = visible;
+            args.Visible = this.filter.Decide(args.BatchNumber, listing.Id, listing.Description.TextValue, args.Visible);
 
-            // Debug level: shown in /xllog only when its log level is set to Debug.
-            // The text logged is the match key, so listings that look identical here are combined.
-            Plugin.Log.Debug(
-                "PF batch={Batch} id={Id} secs={Secs} visible={Visible} text={Text}",
-                args.BatchNumber,
-                listing.Id,
-                listing.SecondsRemaining,
-                visible,
-                DescriptionMatch.Key(description));
+            // Batch 0 is the result set's final segment. Log one summary line a frame later,
+            // after the whole segment is processed, instead of a line per listing (#11).
+            var set = this.filter.NewestSummary.ResultSetNumber;
+            if (args.BatchNumber == 0 && this.summaryScheduledFor != set)
+            {
+                this.summaryScheduledFor = set;
+                Plugin.Framework.RunOnTick(this.LogSummary, delayTicks: 1, cancellationToken: this.disposed.Token);
+            }
         }
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Error handling Party Finder listing");
         }
+    }
+
+    private void LogSummary()
+    {
+        // Debug level: shown in /xllog and dalamud.log only when the log level is Debug+.
+        Plugin.Log.Debug("PF {Summary}", this.filter.NewestSummary.Describe());
     }
 }
