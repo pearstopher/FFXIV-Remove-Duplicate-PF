@@ -12,6 +12,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    # A normal run takes about 1 minute. Fail instead of hanging for GitHub's 6-hour default (#45).
+    timeout-minutes: 10
 
     steps:
       - name: Checkout
@@ -37,6 +39,8 @@ jobs:
         run: dotnet test --configuration Release --no-build
 
       - name: Upload plugin package
+        # Normally takes about 1 second; it once hung for over 5 minutes (#45).
+        timeout-minutes: 1
         uses: actions/upload-artifact@v7
         with:
           name: RemoveDuplicatePF
