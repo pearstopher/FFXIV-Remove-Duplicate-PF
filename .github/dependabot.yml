@@ -1,0 +1,25 @@
+# Opens PRs to keep dependencies current (#14). Each PR runs CI before it can be merged.
+version: 2
+updates:
+  # NuGet: Dalamud.NET.Sdk (global.json msbuild-sdks) and the test project's packages.
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for the test tooling instead of one per package.
+      test-packages:
+        patterns:
+          - "xunit*"
+          - "Microsoft.NET.Test.Sdk"
+          - "coverlet.*"
+
+  # GitHub Actions versions used in .github/workflows (e.g. checkout, setup-dotnet, upload-artifact).
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
