@@ -12,14 +12,19 @@ public sealed class Plugin : IDalamudPlugin
 {
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IPartyFinderGui PartyFinderGui { get; private set; } = null!;
+
+    private readonly PartyFinderListener listener;
 
     public Plugin()
     {
+        this.listener = new PartyFinderListener();
         Log.Information($"{PluginInterface.Manifest.Name} loaded");
     }
 
     public void Dispose()
     {
+        this.listener.Dispose();
         Log.Information($"{PluginInterface.Manifest.Name} unloaded");
     }
 }
