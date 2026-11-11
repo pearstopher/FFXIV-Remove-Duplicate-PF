@@ -60,6 +60,8 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # Editors / IDEs
+.vs/
+*.user
 .vscode/
 .idea/
 *.swp
