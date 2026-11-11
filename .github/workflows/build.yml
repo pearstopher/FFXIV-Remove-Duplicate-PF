@@ -37,7 +37,7 @@ jobs:
         run: dotnet test --configuration Release --no-build
 
       - name: Upload plugin package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: RemoveDuplicatePF
           path: RemoveDuplicatePF/bin/x64/Release/RemoveDuplicatePF/*
