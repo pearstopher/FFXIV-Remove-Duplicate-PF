@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <ItemGroup>
+    <ProjectReference Include="..\RemoveDuplicatePF.Core\RemoveDuplicatePF.Core.csproj" />
+  </ItemGroup>
   <PropertyGroup>
     <Version>0.0.0.1</Version>
     <!-- Manifest fields (see https://github.com/goatcorp/DalamudPackager) -->

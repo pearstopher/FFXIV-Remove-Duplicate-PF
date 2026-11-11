@@ -85,7 +85,7 @@ Once the filtering features land (#7 to #10):
 
 ## 6. Unit tests
 
-The duplicate-grouping and prefix logic lives in a library that doesn't need the game, so it gets unit tests (the test project comes in #2). Run them with:
+The duplicate-grouping and prefix logic lives in `RemoveDuplicatePF.Core`, a library that doesn't reference Dalamud or the game. That lets `RemoveDuplicatePF.Tests` (xUnit) test it without launching anything. A test fails if Core ever references Dalamud, game structs or Lumina, so game-specific code belongs in the plugin project. Run the tests with:
 
 ```sh
 dotnet test
