@@ -117,6 +117,33 @@ Unit tests cover the logic. The in-game check covers the hooks and UI. A change 
 - [ ] Anything that changes Party Finder behaviour was tried in the real Party Finder window
 - [ ] The PR body says `Closes #<issue>` and lists what you tested in game
 
+## 8. Releasing a new version
+
+Releases are made by pushing a version tag. Everything else is automated by [.github/workflows/release.yml](.github/workflows/release.yml).
+
+1. Make sure `main` has everything you want to release, CI is green, and the manual tests pass.
+2. Pick the next version (`vMAJOR.MINOR.PATCH`, for example `v1.0.1` for a fix, `v1.1.0` for a new feature).
+3. Tag `main` and push the tag:
+
+   ```sh
+   git checkout main
+   git pull
+   git tag v1.0.1
+   git push origin v1.0.1
+   ```
+
+4. The **Release** workflow then:
+   - builds and tests with the version from the tag (`v1.0.1` → `1.0.1.0`);
+   - publishes a **public** GitHub Release named after the tag, with `latest.zip` attached and generated release notes;
+   - regenerates `repo.json` on `main` (version, download links, Dalamud API level, update time) with [.github/scripts/make_repo_json.py](.github/scripts/make_repo_json.py), and commits it.
+5. Players get the update the next time Dalamud checks the custom repo:
+
+   ```
+   https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-Duplicate-PF/main/repo.json
+   ```
+
+A pushed tag publishes a public release straight away. If a release goes wrong, fix it on `main` and release a new version rather than reusing the tag.
+
 ## Troubleshooting
 
 | Problem | Fix |
