@@ -6,13 +6,13 @@ Record the result in the PR description: pass or fail, plus anything odd you not
 
 ## Setup for every session
 
-1. Run `dotnet build`, then load or reload the dev plugin in `/xlplugins`.
-2. Open `/xllog`, filter for `RemoveDuplicatePF`, and confirm `Remove Duplicate PF loaded` with no red errors.
-3. **Optional, for detailed logs:** in `/xllog`, set the log level to **Debug**. Each listing then logs a line like:
+Follow **"Before a session"** in [in-game-testing.md](in-game-testing.md). It covers building, checking the `loaded (...)` build line, setting `/xllog` to **Debug+**, and keeping `dalamud.log` from filling up. With Debug+ on, each listing logs a line like:
 
-   ```
-   PF batch=1 id=123456 secs=3200 visible=False text=Come to my venue…
-   ```
+```
+PF batch=1 id=123456 secs=3200 visible=False text=Come to my venue…
+```
+
+Report results in the format under "After a session" in that guide.
 
 ---
 

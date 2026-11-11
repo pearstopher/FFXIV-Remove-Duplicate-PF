@@ -88,6 +88,8 @@ The same log is saved to `%APPDATA%\XIVLauncher\dalamud.log`. That file is usefu
 
 If the build fails because the DLL is in use, disable the plugin in game, build, then enable it again.
 
+For a full test session (log setup, which steps to run, and how to report results so they can be checked against `dalamud.log`), follow **[docs/in-game-testing.md](docs/in-game-testing.md)**.
+
 ### Testing the Party Finder behaviour
 
 Once the filtering features land (#7 to #10):
