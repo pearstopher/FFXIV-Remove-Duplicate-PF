@@ -73,7 +73,8 @@ internal sealed unsafe class ListingPrefixer : IDisposable
             if (addon == null || !addon->IsVisible)
                 return;
 
-            var groups = this.filter.Tracker.DuplicateGroupsByDescription;
+            // Use the result set for the page on screen, not just the newest one (#51).
+            var groups = DisplayedListings.ResultSetOnScreen(this.filter).Tracker.DuplicateGroupsByDescription;
             if (groups.Count == 0)
                 return;
 

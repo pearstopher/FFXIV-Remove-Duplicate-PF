@@ -92,6 +92,10 @@ The count is for the **page currently shown**.
 6. With Debug+ logging, look for `PF title:` lines.
    - **Expected:** one line each time the count changes. **If you see `Party Finder title text node not found`,** report it; the title count is then disabled but nothing else is affected.
 
+7. **Background re-fetch (#51):** go to page 2 with Next, then wait about 20 seconds without touching anything.
+   - **Expected:** the title keeps matching page 2. Add up the prefixes on the page (each `[N]` counts N − 1) and compare with the title. The game may re-download page 1 in the background; that must not change the title or prefixes for page 2.
+   - In the Debug log, `PF on screen: result set #N (older, M listings matched…)` means the plugin noticed a background fetch and kept using the page on screen. **If M is always 0,** the game's displayed-listings list isn't what we expected; report it.
+
 ### Also record
 
 - [ ] Does the window show a **subtitle** under or next to the title? If so, what does it say?

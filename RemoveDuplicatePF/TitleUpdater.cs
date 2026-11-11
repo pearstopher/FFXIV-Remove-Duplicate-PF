@@ -71,7 +71,8 @@ internal sealed unsafe class TitleUpdater : IDisposable
             if (addon == null || !addon->IsVisible)
                 return;
 
-            var hidden = this.filter.Tracker.HiddenCount;
+            // Use the result set for the page on screen, not just the newest one (#51).
+            var hidden = DisplayedListings.ResultSetOnScreen(this.filter).Tracker.HiddenCount;
             if (!SetTitle(addon, current => TitleText.Compose(current, hidden)) && !this.loggedMissingTitle)
             {
                 this.loggedMissingTitle = true;
