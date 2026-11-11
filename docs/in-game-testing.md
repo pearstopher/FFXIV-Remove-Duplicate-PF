@@ -41,7 +41,7 @@ Results:
   ...
 ```
 
-With the time window, Claude can read `%APPDATA%\XIVLauncher\dalamud.log`, filter for `RemoveDuplicatePF`, and check the plugin's own record of what it did. For example, each listing's `PF batch=… visible=…` line shows exactly what was hidden and why.
+With the time window, Claude can read `%APPDATA%\XIVLauncher\dalamud.log`, filter for `RemoveDuplicatePF`, and check the plugin's own record of what it did. For example, each page's `PF result set #…` line shows how many listings were hidden and which duplicate groups they belonged to, and the `PF on screen` and `PF prefix` lines show which page the title and prefixes are using.
 
 If the game is still running, there's no need to close it. The log is written as you go.
 
