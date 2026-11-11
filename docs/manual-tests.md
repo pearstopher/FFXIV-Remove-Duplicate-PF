@@ -19,8 +19,8 @@ Report results in the format under "After a session" in that guide.
 ## Hide duplicate listings (#7)
 
 1. Open Party Finder (Duty menu > Party Finder) and pick a busy category, for example **Others**, or **All**.
-2. Look for listings with identical descriptions, such as venue ads.
-   - **Expected:** only one copy of each identical description is shown, and it is the first one the game would have listed.
+2. Look for listings whose descriptions start the same way, such as venue ads. Listings count as duplicates when their **first 30 characters** match (shorter descriptions must match in full).
+   - **Expected:** only one listing per duplicate group is shown, and it is the first one the game would have listed. In the Debug log, no two `visible=true` lines in the same result set have the same `text=`.
 3. Find listings with an **empty** description.
    - **Expected:** they are all still shown.
 4. With Debug logging on, check the log.
@@ -61,7 +61,7 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
 ## Coloured [N] prefix (#9)
 
 1. Open a busy category with duplicates (as in the #7 steps).
-   - **Expected:** each listing that stands in for a duplicate group shows a coloured `[N]` at the start of its description, where N is the number of identical listings (including itself). The colour differs from the normal description text.
+   - **Expected:** each listing that stands in for a duplicate group shows a coloured `[N]` at the start of its description, where N is the number of listings in its duplicate group (including itself). The colour differs from the normal description text.
 2. Look at listings that have no duplicates.
    - **Expected:** no `[N]` prefix.
 3. Scroll the list up and down several times, and switch between the standard and compact list views if available.

@@ -32,14 +32,14 @@ internal sealed class PartyFinderListener : IDisposable
             args.Visible = visible;
 
             // Debug level: shown in /xllog only when its log level is set to Debug.
-            // Answers the in-game questions in docs/party-finder-notes.md.
+            // The text logged is the match key, so listings that look identical here are combined.
             Plugin.Log.Debug(
                 "PF batch={Batch} id={Id} secs={Secs} visible={Visible} text={Text}",
                 args.BatchNumber,
                 listing.Id,
                 listing.SecondsRemaining,
                 visible,
-                description.Length > 30 ? description[..30] : description);
+                DescriptionMatch.Key(description));
         }
         catch (Exception ex)
         {

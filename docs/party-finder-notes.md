@@ -124,7 +124,7 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 
 ## Other notes for later issues
 
-- **Matching key (#5):** use `listing.Description.TextValue` (the text players see), compared exactly (ordinal). Keep the matching function in Core with unit tests for whitespace, colour payloads and auto-translate. Whether to group across categories when viewing "All" is a #5 decision. The PROJECT.md wording ("exact same text") implies yes.
+- **Matching key (#5, changed in #42):** use `listing.Description.TextValue` (the text players see), compared ordinally on its **first 30 characters** (`DescriptionMatch.Key`); shorter descriptions must match in full. The Debug log prints the same key, so listings that look identical in the log are always combined. Keep the matching function in Core with unit tests for whitespace, colour payloads and auto-translate. Whether to group across categories when viewing "All" is a #5 decision. The PROJECT.md wording ("exact same text") implies yes.
 - **NoSoliciting resets on every batch change.** It clears its history whenever `BatchNumber` changes, which is every segment, so it isn't a model for per-page tracking. Reset on `BatchNumber == 1` instead.
 - **Detail view:** opening a listing loads its full details separately (`AgentLookingForGroup.Detailed`). The `[N]` prefix won't appear there, which is acceptable.
 - **Main thread:** `ReceiveListing` runs on the game's network-handling path. Keep the handler fast and allocation-light, with no blocking calls.

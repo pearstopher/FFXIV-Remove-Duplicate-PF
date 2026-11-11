@@ -94,8 +94,8 @@ For a full test session (log setup, which steps to run, and how to report result
 
 Once the filtering features land (#7 to #10):
 
-- Open Party Finder from the Duty menu. Categories with lots of advertising (for example venue ads) usually contain exact duplicates.
-- Compare the list with the plugin enabled and disabled. Each set of identical listings should collapse into one with a coloured `[N]` prefix, and the window title should show the number of listings combined.
+- Open Party Finder from the Duty menu. Categories with lots of advertising (for example venue ads) usually contain duplicates.
+- Compare the list with the plugin enabled and disabled. Each set of duplicate listings (same first 30 characters) should collapse into one with a coloured `[N]` prefix, and the window title should show the number of listings combined.
 - Change category, search, refresh and change page. The counts should reset and recompute each time (#8).
 - Close the window and disable the plugin. The game should behave exactly as it did before (#11).
 
