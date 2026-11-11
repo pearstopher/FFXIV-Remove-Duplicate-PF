@@ -22,4 +22,13 @@ public static class BuildInfo
 
         return string.IsNullOrWhiteSpace(dllPath) ? text : $"{text}, from {dllPath}";
     }
+
+    /// <summary>
+    /// Reads the DLL's last write time fresh from disk, in local time.
+    /// </summary>
+    /// <remarks>
+    /// Don't use a reused <see cref="FileInfo"/> (such as Dalamud's <c>AssemblyLocation</c>):
+    /// it caches timestamps, so after a hot reload it reports the previous build's time.
+    /// </remarks>
+    public static DateTime ReadBuildTime(string dllPath) => File.GetLastWriteTime(dllPath);
 }

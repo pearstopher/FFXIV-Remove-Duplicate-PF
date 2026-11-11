@@ -34,7 +34,7 @@ public sealed class Plugin : IDalamudPlugin
 
         // Logs which build is running, so a stale or wrong-configuration build is obvious in /xllog.
         var dll = PluginInterface.AssemblyLocation;
-        var build = BuildInfo.Describe(BuildConfiguration, dll.LastWriteTime, dll.FullName);
+        var build = BuildInfo.Describe(BuildConfiguration, BuildInfo.ReadBuildTime(dll.FullName), dll.FullName);
         Log.Information($"{PluginInterface.Manifest.Name} loaded ({build})");
     }
 
