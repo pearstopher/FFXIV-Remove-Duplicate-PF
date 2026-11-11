@@ -144,6 +144,32 @@ Releases are made by pushing a version tag. Everything else is automated by [.gi
 
 A pushed tag publishes a public release straight away. If a release goes wrong, fix it on `main` and release a new version rather than reusing the tag.
 
+## 9. Staying up to date after patches
+
+Two things run automatically (#14):
+
+- **Daily CI against the latest Dalamud.** The **Build and test** workflow runs on a schedule (09:17 UTC daily) as well as on pushes and PRs. It always downloads the newest Dalamud, so if a Dalamud or game patch breaks the plugin, a scheduled run fails and GitHub emails the repo owner.
+- **Dependabot PRs every Monday** (`.github/dependabot.yml`) for:
+  - `Dalamud.NET.Sdk`, whose version lives in `global.json` under `msbuild-sdks` (not in the csproj);
+  - the test project's NuGet packages, grouped into one PR;
+  - the GitHub Actions versions used in the workflows.
+
+  Each Dependabot PR runs CI. Merge it if CI is green; if it's red, the PR shows what needs fixing.
+
+### Patch-day checklist
+
+When the game or Dalamud updates:
+
+1. **Wait for Dalamud.** After a game patch, Dalamud and plugins are disabled until Dalamud releases a compatible build. Nothing in this repo can speed that up.
+2. **Check CI.** Run **Build and test** manually (Actions tab → *Build and test* → *Run workflow*) or wait for the daily run.
+   - **Green:** nothing to do. If the Dalamud **API level** didn't change, players' installed copy keeps working.
+   - **Red:** read the failed step's log. Usual causes: a renamed or removed Dalamud API, or a changed game struct in FFXIVClientStructs.
+3. **If the Dalamud API level changed** (for example 15 → 16), Dalamud won't load plugins built for the old level:
+   1. Merge the Dependabot PR for the new `Dalamud.NET.Sdk`, or bump it by hand in `global.json`.
+   2. Fix any build errors, run `dotnet test`, and run the manual tests in game (`docs/manual-tests.md`).
+   3. Release a new version (section 8), for example `v1.0.1`. The release workflow puts the new `DalamudApiLevel` into `repo.json` automatically, and players get the update from the custom repo.
+4. **If only game structs changed** (the build passes but something misbehaves in game), check `/xllog` for `Party Finder title text node not found` or other errors. The title and prefix code (`TitleUpdater`, `ListingPrefixer`) is what depends on the game's UI layout.
+
 ## Troubleshooting
 
 | Problem | Fix |

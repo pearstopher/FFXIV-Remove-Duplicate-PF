@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+<!-- The Dalamud.NET.Sdk version is set in global.json (msbuild-sdks), where Dependabot keeps it up to date (#14). -->
+<Project Sdk="Dalamud.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\RemoveDuplicatePF.Core\RemoveDuplicatePF.Core.csproj" />
   </ItemGroup>

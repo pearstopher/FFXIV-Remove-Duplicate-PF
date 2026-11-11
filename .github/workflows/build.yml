@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   pull_request:
   workflow_dispatch:
+  # Daily build against the latest Dalamud, so a Dalamud or game patch that breaks the
+  # plugin shows up as a failed run (GitHub emails the repo owner) even with no new commits (#14).
+  schedule:
+    - cron: '17 9 * * *'
 
 permissions:
   contents: read
