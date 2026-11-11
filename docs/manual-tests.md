@@ -74,3 +74,24 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
    - **Expected:** X is roughly equal to Y while the matching rows are on screen. **If X stays 0 while there are duplicate groups,** the row text doesn't match the descriptions. Report it, and note what a duplicate's row looks like (a screenshot helps).
 7. Open a prefixed listing's details.
    - **Expected:** the details window shows the original description without the prefix (expected and fine).
+
+## Duplicate count in the window title (#10)
+
+The count is for the **page currently shown**.
+
+1. Open a busy category with duplicates.
+   - **Expected:** the title reads `Party Finder (N duplicates combined)`, where N matches the number of `visible=false` lines for that result set in the Debug log. It says `1 duplicate combined` when N is 1.
+2. Open a category or page with no duplicates.
+   - **Expected:** the title is just `Party Finder`.
+3. Refresh, change category and change page a few times.
+   - **Expected:** the count updates each time. It never stacks (no `(3 duplicates combined) (3 duplicates combined)`).
+4. Close Party Finder and reopen it.
+   - **Expected:** the title starts as `Party Finder` and gains the count once listings load.
+5. With Party Finder open and showing a count, disable the plugin in `/xlplugins`.
+   - **Expected:** the title goes back to `Party Finder` straight away.
+6. With Debug+ logging, look for `PF title:` lines.
+   - **Expected:** one line each time the count changes. **If you see `Party Finder title text node not found`,** report it; the title count is then disabled but nothing else is affected.
+
+### Also record
+
+- [ ] Does the window show a **subtitle** under or next to the title? If so, what does it say?

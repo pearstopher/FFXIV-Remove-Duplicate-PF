@@ -25,12 +25,14 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly PartyFinderListener listener;
     private readonly ListingPrefixer prefixer;
+    private readonly TitleUpdater titleUpdater;
 
     public Plugin()
     {
         var filter = new ListingFilter();
         this.listener = new PartyFinderListener(filter);
         this.prefixer = new ListingPrefixer(filter);
+        this.titleUpdater = new TitleUpdater(filter);
 
         // Logs which build is running, so a stale or wrong-configuration build is obvious in /xllog.
         var dll = PluginInterface.AssemblyLocation;
@@ -43,6 +45,7 @@ public sealed class Plugin : IDalamudPlugin
         // Stop changing listings first, then put the window's text back.
         this.listener.Dispose();
         this.prefixer.Dispose();
+        this.titleUpdater.Dispose();
         Log.Information($"{PluginInterface.Manifest.Name} unloaded");
     }
 }
