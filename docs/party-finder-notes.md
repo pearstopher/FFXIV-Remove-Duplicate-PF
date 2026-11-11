@@ -109,6 +109,7 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
   2. After the final segment (`BatchNumber == 0`), on the next `PostRefresh`/`PostRequestedUpdate`: set the title (or subtitle) to the original plus ` (N duplicates hidden)`. Only touch it while the addon exists (check `IsAddonReady`/non-null).
   3. `PreFinalize` and plugin `Dispose`: restore the stored text and unregister all listeners (#11).
 - **Prefer the subtitle** if it is empty, because it leaves the game's title untouched. **To verify in game:** what the title and subtitle currently show, and whether the game resets them on refresh. If it does, re-apply on every refresh.
+- **As built (#10, verified in game 2026-11-11):** the count is appended to the **title** (`Party Finder (N duplicates combined)`), which the owner confirmed displays correctly and updates on refresh and page changes. The subtitle isn't used and isn't needed. The title is re-checked after list updates and every 250 ms, and the count follows the page on screen (#51).
 - Interop calls must run on the main thread. `IAddonLifecycle` callbacks already do; anything triggered from elsewhere should use `IFramework.RunOnFrameworkThread`.
 
 ## 6. Counting duplicates across pages
@@ -119,6 +120,8 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 - a page-2 listing could be hidden because its twin was on page 1, but the user would never see the twin's count change.
 
 **Recommendation:** count **per page**, reset on `BatchNumber == 1` (#8), and word the title so it is clearly per page (for example "3 duplicates hidden on this page").
+
+**Decision (owner, 2026-11-11): no cross-page combining.** Counts stay per page. The plugin only sees pages the game downloads; it must not request other pages itself, since that would send extra server requests and change what the window is doing (#11). Combining across pages already visited was also rejected: counts on a page would change after visiting another, and results would depend on browsing order. The last few result sets are kept only to tell which page is on screen (#51), never to combine them.
 
 ---
 
@@ -149,4 +152,15 @@ Answered from the Debug log of the 2026-11-11 session (11:56–12:05), unless ma
 - [x] Page size: 50 (section 1)
 - [x] Arrival order: sorted by time remaining, consistent with the window's order (section 1). The owner also confirmed that the kept listings and `[N]` prefixes appear on the right rows (#9).
 - [x] Row text matching for `[N]` (#9): works. `PF prefix: X rows matched` showed 1–3 on-screen rows matched for up to 7 groups; only rows currently on screen exist as text nodes.
-- [ ] **Open (for #10):** current title and subtitle text of the `LookingForGroup` window, and whether the game resets them on refresh
+- [x] Window title: reads "Party Finder"; the count appended by #10 displays and updates correctly. No subtitle is needed (owner, 2026-11-11).
+
+## Compatibility with other Party Finder plugins (#28)
+
+**Research (Dalamud `43b3411` source and the owner's log):**
+- Plugins' `ReceiveListing` handlers run in the order the plugins were **constructed**. Each plugin's scoped `PartyFinderGui` subscribes once, in its constructor, and Dalamud calls subscribers in order (`Delegate.EnumerateInvocationList`). NoSoliciting and Better Party Finder also subscribe once, at load.
+- Dev plugins load first at game start, so ours runs **before** NoSoliciting and Better Party Finder after a restart, and **after** them after a hot reload or re-enable.
+- `RemoveDuplicatePF` never un-hides another plugin's decision and doesn't count listings already hidden, so when ours runs last there's no interaction.
+- **Known gap when ours runs first:** if another plugin hides the copy we kept (for example, Better Party Finder filtering on duty, jobs or item level), the copies we hid stay hidden and that group disappears. NoSoliciting filters on text, so it would normally hide every copy anyway.
+- Re-subscribing per page can't change the order between plugins. `LoadPriority` only nudges load order, because most plugins load in parallel.
+
+**Outcome (owner, 2026-11-11):** tested alongside NoSoliciting and Better Party Finder with no problems seen. No mitigation added. Any compatibility problem found later will be filed as a new issue, referencing this section.

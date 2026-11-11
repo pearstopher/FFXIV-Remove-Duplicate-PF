@@ -96,6 +96,9 @@ The count is for the **page currently shown**.
    - **Expected:** the title keeps matching page 2. Add up the prefixes on the page (each `[N]` counts N − 1) and compare with the title. The game may re-download page 1 in the background; that must not change the title or prefixes for page 2.
    - In the Debug log, `PF on screen: result set #N (older, M listings matched…)` means the plugin noticed a background fetch and kept using the page on screen. **If M is always 0,** the game's displayed-listings list isn't what we expected; report it.
 
-### Also record
+## Other Party Finder plugins (#28)
 
-- [ ] Does the window show a **subtitle** under or next to the title? If so, what does it say?
+If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#10 checks with them enabled, once after a **full game restart** and once after **re-enabling** Remove Duplicate PF in `/xlplugins`. The order plugins run in differs between those two cases (see `docs/party-finder-notes.md`, "Compatibility with other Party Finder plugins").
+
+- **Expected:** in both cases, the title count equals the total of the `[N]` prefixes on the page (each `[N]` counts N − 1).
+- **If the title is higher only after a restart,** another plugin hid a listing we kept. File a bug and include the times of both runs.
