@@ -1,0 +1,28 @@
+[
+  {
+    "Author": "pearstopher",
+    "Name": "Remove Duplicate PF",
+    "InternalName": "RemoveDuplicatePF",
+    "AssemblyVersion": "1.0.0.0",
+    "Description": "Combines duplicate Party Finder listings (ads that start with the same 30 characters) into one, marks it with a coloured [N] count, and shows the number combined in the Party Finder title. No settings: enable it and it works.",
+    "Punchline": "Collapses duplicate Party Finder listings into one.",
+    "ApplicableVersion": "any",
+    "RepoUrl": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF",
+    "IconUrl": "https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-Duplicate-PF/main/images/icon.png",
+    "Tags": [
+      "party finder",
+      "duplicates",
+      "filter"
+    ],
+    "DalamudApiLevel": 15,
+    "LoadRequiredState": 0,
+    "LoadSync": false,
+    "CanUnloadAsync": false,
+    "LoadPriority": 0,
+    "AcceptsFeedback": true,
+    "DownloadLinkInstall": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.0.0/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.0.0/latest.zip",
+    "DownloadLinkTesting": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.0.0/latest.zip",
+    "LastUpdate": 1794436226
+  }
+]
