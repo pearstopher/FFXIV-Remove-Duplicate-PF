@@ -1,0 +1,12 @@
+# Store and check out text files with LF line endings on every OS, matching
+# .editorconfig (end_of_line = lf). This overrides a local core.autocrlf=true,
+# which would otherwise convert files to CRLF on Windows checkouts.
+* text=auto eol=lf
+
+# Binary files: never convert or diff as text.
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.dll binary
+*.pdb binary
