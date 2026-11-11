@@ -1,0 +1,45 @@
+name: Build and test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download Dalamud
+        shell: pwsh
+        run: |
+          $dalamudHome = Join-Path $env:RUNNER_TEMP "dalamud"
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
+          Expand-Archive -Force latest.zip $dalamudHome
+          "DALAMUD_HOME=$dalamudHome" >> $env:GITHUB_ENV
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Upload plugin package
+        uses: actions/upload-artifact@v7
+        with:
+          name: RemoveDuplicatePF
+          path: RemoveDuplicatePF/bin/x64/Release/RemoveDuplicatePF/*
+          if-no-files-found: error
+          retention-days: 7
