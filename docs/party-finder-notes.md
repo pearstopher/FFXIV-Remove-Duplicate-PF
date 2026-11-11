@@ -55,6 +55,8 @@ Rules that follow from the source:
 
 ## 3. Identifying the oldest listing in a duplicate group
 
+> **Decision (after #4):** the display order is trusted as-is. The **first listing in each group in the order the game shows it** stays visible. No age signal (listing ID, time remaining) is used. This is what option 1 below does, and `DuplicateTracker` in Core implements it (#5). The rest of this section is kept as background.
+
 ### Candidate fields
 
 | Field | Meaning | Usefulness |
@@ -93,7 +95,7 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 | **B. Edit the packet in our own hook** | Hook `InfoProxyCrossRealm.ReceiveListing` with `IGameInteropProvider.HookFromAddress`, using `InfoProxyCrossRealm.Addresses.ReceiveListing`, and rewrite `CrossRealmListing._description` (192 bytes) before the game reads it. | The game displays it naturally everywhere the list shows it. | The count is only "copies seen so far", which is wrong for the kept listing. It has to fit 192 bytes including the colour payload, so it may truncate. Other plugins (NoSoliciting) would see the modified text. |
 | **C. No in-list prefix (fallback)** | Show only the total in the window title (#10) and log the per-group counts. | No UI hacking at all. | Loses the per-listing `[N]`, which is a headline feature. |
 
-**Proposal:** prototype **option A** in #9. If row mapping proves unreliable, fall back to **option C** for the first release, and record what was learned on #9. Option B can't show correct counts, so it is rejected.
+**Decision (after #4):** go with **option A**, implemented in #9. If row mapping proves unreliable, fall back to **option C** for the first release, and record what was learned on #9. Option B can't show correct counts, so it is rejected.
 
 **Colour:** build the prefix as an `SeString` with a `UIForeground` payload, the same mechanism the game uses for its coloured tags. Then write it with `AtkTextNode.SetText` using the encoded bytes.
 
@@ -132,6 +134,5 @@ Add a temporary debug log (in #5 or #7) and record the answers here:
 
 - [ ] `BatchNumber` sequence for a refresh, a category change and a page change (does it always start at 1 and end at 0?)
 - [ ] Page size (is it 50?)
-- [ ] Do `Id` values increase with listing age? Compare with `SecondsRemaining`.
-- [ ] Arrival order versus the sort order shown in the window
+- [ ] Arrival order matches the order shown in the window (needed so the first-arrived listing is the first displayed)
 - [ ] Current title and subtitle text of the `LookingForGroup` window, and whether the game resets them on refresh
