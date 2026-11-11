@@ -25,6 +25,31 @@ public class BuildInfoTests
     }
 
     [Fact]
+    public void Build_time_is_read_fresh_after_the_file_changes()
+    {
+        // Regression (#38): a reused FileInfo kept reporting the first build's time after a hot reload.
+        var path = Path.GetTempFileName();
+        try
+        {
+            var first = new DateTime(2026, 1, 1, 9, 0, 0, DateTimeKind.Local);
+            var second = new DateTime(2026, 1, 1, 10, 30, 0, DateTimeKind.Local);
+
+            File.SetLastWriteTime(path, first);
+            var cached = new FileInfo(path);
+            Assert.Equal(first, cached.LastWriteTime);
+
+            File.SetLastWriteTime(path, second);
+
+            Assert.Equal(first, cached.LastWriteTime); // what the plugin used to read
+            Assert.Equal(second, BuildInfo.ReadBuildTime(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void Time_format_does_not_depend_on_the_current_culture()
     {
         var original = CultureInfo.CurrentCulture;
