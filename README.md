@@ -13,7 +13,7 @@ There are no settings: install it, enable it, and open Party Finder.
 
 - **Combines duplicate listings.** Listings whose descriptions start with the same 30 characters count as duplicates. Only one stays visible: the first one in the order the game shows them.
 - **Marks the one that stays** with a coloured **`[N]`** in front of its description, where N is the number of copies. For example, three copies of a venue ad become one listing showing **`[3]`** `Come to my venue tonight…`.
-- **Shows the total in the window title**, for example **`Party Finder (5 duplicates combined)`**, for the page you're looking at.
+- **Shows the total in the window title** in the same colour, for example **`Party Finder (7 duplicates)`**, for the page you're looking at. The number is the sum of the `[N]` counts on the page, so `[3]`, `[2]` and `[2]` make 7.
 - **Leaves listings with an empty description alone.** They're never combined.
 - **Counts each page separately.** Duplicates on different pages aren't combined.
 

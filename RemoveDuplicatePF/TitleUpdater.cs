@@ -9,9 +9,10 @@ using RemoveDuplicatePF.Core;
 namespace RemoveDuplicatePF;
 
 /// <summary>
-/// Shows the number of combined duplicates in the Party Finder window title,
-/// e.g. <c>Party Finder (12 duplicates combined)</c>, and restores the game's
-/// title on unload.
+/// Shows the total number of duplicate listings in the Party Finder window title,
+/// e.g. <c>Party Finder (7 duplicates)</c> with the count in the <c>[N]</c> prefix colour,
+/// and restores the game's title on unload. The total equals the sum of the <c>[N]</c>
+/// prefixes on the page (#64).
 /// </summary>
 /// <remarks>
 /// The title is the window component's title text node (<c>AtkComponentWindow</c>,
@@ -46,7 +47,7 @@ internal sealed unsafe class TitleUpdater : IDisposable
         {
             var addon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(AddonName).Address;
             if (addon != null)
-                SetTitle(addon, TitleText.Original);
+                SetTitle(addon, total: null);
         }
         catch (Exception ex)
         {
@@ -71,9 +72,10 @@ internal sealed unsafe class TitleUpdater : IDisposable
             if (addon == null || !addon->IsVisible)
                 return;
 
-            // Use the result set for the page on screen, not just the newest one (#51).
-            var hidden = DisplayedListings.ResultSetOnScreen(this.filter).Tracker.HiddenCount;
-            if (!SetTitle(addon, current => TitleText.Compose(current, hidden)) && !this.loggedMissingTitle)
+            // Use the result set for the page on screen, not just the newest one (#51). The total
+            // includes the kept listing of each group, so it equals the sum of the [N] prefixes (#64).
+            var total = DisplayedListings.ResultSetOnScreen(this.filter).Tracker.DuplicateListingCount;
+            if (!SetTitle(addon, total) && !this.loggedMissingTitle)
             {
                 this.loggedMissingTitle = true;
                 Plugin.Log.Warning("Party Finder title text node not found; title count disabled");
@@ -85,20 +87,35 @@ internal sealed unsafe class TitleUpdater : IDisposable
         }
     }
 
-    // Applies 'change' to the title text; only writes when it actually changes.
+    // Sets the title to the game's title plus " (N duplicates)" in the [N] prefix colour, or the
+    // game's title alone when total is under 2 (or null, to restore on unload). Only writes when
+    // the encoded text actually differs, so a title the game reset to plain text gets recoloured.
     // Returns false if the title node couldn't be found.
-    private static bool SetTitle(AtkUnitBase* addon, Func<string, string> change)
+    private static bool SetTitle(AtkUnitBase* addon, int? total)
     {
         var node = FindTitleNode(addon);
         if (node == null)
             return false;
 
-        var current = SeString.Parse(node->NodeText.AsSpan()).TextValue;
-        var desired = change(current);
-        if (desired != current)
+        var currentBytes = node->NodeText.AsSpan();
+        var original = TitleText.Original(SeString.Parse(currentBytes).TextValue);
+        var suffix = total is { } n ? TitleText.Suffix(n) : null;
+
+        var builder = new SeStringBuilder().AddText(original);
+        if (suffix is not null)
+        {
+            builder
+                .AddText(" ")
+                .AddUiForeground(CountPrefix.DefaultColorId)
+                .AddText(suffix.TrimStart())
+                .AddUiForegroundOff();
+        }
+
+        var desired = builder.Encode();
+        if (!currentBytes.SequenceEqual(desired))
         {
             node->SetText(desired);
-            Plugin.Log.Debug("PF title: {Title}", desired);
+            Plugin.Log.Debug("PF title: {Title}", original + suffix);
         }
 
         return true;
