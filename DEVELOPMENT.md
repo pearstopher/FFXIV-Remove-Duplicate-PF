@@ -53,13 +53,26 @@ A good build ends with `Build succeeded. 0 Warning(s) 0 Error(s)`. Treat new war
 
 Dalamud remembers the location, so you only do steps 2 and 3 once. If you also install the released version later, disable one of the two: never run both at the same time.
 
+> **Point the game at the Debug DLL.** `dotnet build` only updates `bin\x64\Debug\`. If the location points at `bin\x64\Release\` instead, the game keeps running whatever was last built as Release, which can be days old. To change it, remove the old location in `/xlsettings` > **Experimental** and add the Debug path. Use `dotnet build -c Release` only when you specifically want to test the shipped build.
+
+### Automatic reloading (recommended)
+
+In `/xlplugins` > **Dev Tools > Installed Dev Plugins**, open the plugin's settings and turn on **automatic reloading**. Dalamud then watches **the exact DLL your dev location points at**, and reloads the plugin about half a second after that file changes. Building the configuration the location points at is enough; you don't need to touch the game.
+
+It only watches that one file. Building the other configuration changes nothing in game.
+
 ## 4. Check that it loaded
 
 Type `/xllog` to open the Dalamud log. Type `RemoveDuplicatePF` in its filter box to show only this plugin's messages. You should see:
 
 ```
-[RemoveDuplicatePF] Remove Duplicate PF loaded
+[RemoveDuplicatePF] Remove Duplicate PF loaded (Debug build, built 2026-11-11 10:36:02, from C:\...\bin\x64\Debug\RemoveDuplicatePF.dll)
 ```
+
+**Check this line every time you test.** The configuration, build time and path tell you exactly which build is running:
+
+- **The build time is older than your last `dotnet build`:** the game is running a stale build. Check that the path is the configuration you built, then reload.
+- **The path says `Release` but you ran plain `dotnet build`:** your dev location points at the wrong folder (see the note in section 3).
 
 Disable the plugin in `/xlplugins` and you should see `... unloaded`. Red errors (`ERR`) or exceptions mentioning the plugin are bugs.
 
@@ -69,8 +82,9 @@ The same log is saved to `%APPDATA%\XIVLauncher\dalamud.log`. That file is usefu
 
 1. Change the code.
 2. Run `dotnet build`.
-3. In `/xlplugins` > **Installed Dev Plugins**, click the plugin's **reload** button, or disable and re-enable it. The new build is loaded without restarting the game.
-4. Test the change in game, and watch `/xllog`.
+3. With automatic reloading on, the plugin reloads by itself. Otherwise, in `/xlplugins` > **Installed Dev Plugins**, click the plugin's **reload** button, or disable and re-enable it. Either way, there's no need to restart the game.
+4. In `/xllog`, confirm the new `loaded (...)` line shows the build time you just built.
+5. Test the change in game, and watch `/xllog`.
 
 If the build fails because the DLL is in use, disable the plugin in game, build, then enable it again.
 
@@ -109,4 +123,4 @@ Unit tests cover the logic. The in-game check covers the hooks and UI. A change 
 | `dotnet` is not recognized | Install the .NET 10 SDK, then restart the terminal or VS Code. |
 | The plugin isn't listed under Installed Dev Plugins | Check that the path in `/xlsettings` points at the `.dll` file itself and that the file exists. |
 | The plugin is listed but won't load | Look in `/xllog` for the exception. After a game patch, Dalamud may need an update first (#14). |
-| My change didn't take effect | Make sure you rebuilt the same configuration (Debug or Release) that your dev plugin path points to, then reload. |
+| My change didn't take effect | Compare the build time in the `loaded (...)` line with your last build. If it's older, you built a different configuration from the one your dev location points at; point the location at Debug (section 3), then rebuild or reload. |

@@ -1,6 +1,7 @@
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using RemoveDuplicatePF.Core;
 
 namespace RemoveDuplicatePF;
 
@@ -14,12 +15,22 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IPartyFinderGui PartyFinderGui { get; private set; } = null!;
 
+#if DEBUG
+    private const string BuildConfiguration = "Debug";
+#else
+    private const string BuildConfiguration = "Release";
+#endif
+
     private readonly PartyFinderListener listener;
 
     public Plugin()
     {
         this.listener = new PartyFinderListener();
-        Log.Information($"{PluginInterface.Manifest.Name} loaded");
+
+        // Logs which build is running, so a stale or wrong-configuration build is obvious in /xllog.
+        var dll = PluginInterface.AssemblyLocation;
+        var build = BuildInfo.Describe(BuildConfiguration, dll.LastWriteTime, dll.FullName);
+        Log.Information($"{PluginInterface.Manifest.Name} loaded ({build})");
     }
 
     public void Dispose()
