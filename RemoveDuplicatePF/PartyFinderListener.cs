@@ -28,7 +28,7 @@ internal sealed class PartyFinderListener : IDisposable
         try
         {
             var description = listing.Description.TextValue;
-            var visible = this.filter.Decide(listing.Id, description, args.Visible);
+            var visible = this.filter.Decide(args.BatchNumber, listing.Id, description, args.Visible);
             args.Visible = visible;
 
             // Debug level: shown in /xllog only when its log level is set to Debug.
