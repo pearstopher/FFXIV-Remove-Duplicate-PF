@@ -84,6 +84,38 @@ public static class RowPrefixMatcher
         return FindGroup(rowText![own.Length..], groups)?.Description;
     }
 
+    /// <summary>Leading characters a row must share with a description to count as a near miss.</summary>
+    public const int NearMissLength = 10;
+
+    /// <summary>
+    /// Diagnostics (#54): if <paramref name="rowText"/> doesn't match any group but starts like one
+    /// (after removing the plugin's prefix and game tags), returns that group's description.
+    /// Otherwise returns <c>null</c>. Used to log rows that should probably have been prefixed.
+    /// </summary>
+    public static string? NearMiss(string rowText, IReadOnlyDictionary<string, int> groupsByDescription)
+    {
+        if (string.IsNullOrWhiteSpace(rowText) || Decide(rowText, groupsByDescription) is not null)
+            return null;
+
+        var text = rowText;
+        var own = OwnPrefix.Match(text);
+        if (own.Success)
+            text = text[own.Length..];
+
+        var tags = LeadingTags.Match(text);
+        if (tags.Success && tags.Length < text.Length)
+            text = text[tags.Length..];
+
+        foreach (var description in groupsByDescription.Keys)
+        {
+            var needed = Math.Min(NearMissLength, description.Length);
+            if (text.Length >= needed && string.CompareOrdinal(text, 0, description, 0, needed) == 0)
+                return description;
+        }
+
+        return null;
+    }
+
     private static RowPrefixDecision? Build(string description, int size, RowPrefixState state) =>
         CountPrefix.For(size) is { } prefix ? new RowPrefixDecision(description, prefix, state) : null;
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
@@ -31,6 +32,9 @@ internal sealed unsafe class ListingPrefixer : IDisposable
     private readonly Dictionary<string, byte[]> originalTextByDescription = new(StringComparer.Ordinal);
     private readonly Stopwatch sinceLastScan = Stopwatch.StartNew();
     private string lastLoggedSummary = string.Empty;
+
+    // Row texts already reported as near misses, so each is logged once (#54 diagnostics).
+    private readonly HashSet<string> loggedNearMisses = new(StringComparer.Ordinal);
 
     public ListingPrefixer(ListingFilter filter)
     {
@@ -78,14 +82,14 @@ internal sealed unsafe class ListingPrefixer : IDisposable
             if (groups.Count == 0)
                 return;
 
-            var matched = 0;
+            var matched = new HashSet<string>(StringComparer.Ordinal);
             ForEachTextNode(&addon->UldManager, node =>
             {
-                if (this.ApplyPrefix(node, groups))
-                    matched++;
+                if (this.ApplyPrefix(node, groups) is { } description)
+                    matched.Add(description);
             });
 
-            this.LogSummary(groups.Count, matched);
+            this.LogSummary(groups, matched);
         }
         catch (Exception ex)
         {
@@ -93,27 +97,34 @@ internal sealed unsafe class ListingPrefixer : IDisposable
         }
     }
 
-    // Returns true if the node belongs to a duplicate group (whether or not it needed changing).
-    private bool ApplyPrefix(AtkTextNode* node, IReadOnlyDictionary<string, int> groups)
+    // Returns the group's description if the node belongs to a duplicate group (whether or not
+    // it needed changing), otherwise null.
+    private string? ApplyPrefix(AtkTextNode* node, IReadOnlyDictionary<string, int> groups)
     {
         var bytes = node->NodeText.AsSpan();
         if (bytes.Length == 0)
-            return false;
+            return null;
 
         var current = SeString.Parse(bytes);
-        var decision = RowPrefixMatcher.Decide(current.TextValue, groups);
+        var rowText = current.TextValue;
+        var decision = RowPrefixMatcher.Decide(rowText, groups);
         if (decision is null)
-            return false;
+        {
+            this.LogNearMiss(rowText, groups);
+            return null;
+        }
 
         switch (decision.State)
         {
             case RowPrefixState.Prefixed:
-                return true;
+                return decision.Description;
             case RowPrefixState.Original:
                 this.originalTextByDescription[decision.Description] = bytes.ToArray();
                 break;
             case RowPrefixState.StalePrefix when !this.originalTextByDescription.ContainsKey(decision.Description):
-                return true; // can't rebuild without the original; leave the row as it is
+                // Can't rebuild without the original; leave the row as it is (#54 diagnostics).
+                Plugin.Log.Debug("PF prefix: stale prefix with no stored original: {Row}", Short(rowText));
+                return decision.Description;
         }
 
         var original = SeString.Parse(this.originalTextByDescription[decision.Description]);
@@ -124,8 +135,30 @@ internal sealed unsafe class ListingPrefixer : IDisposable
             .Append(original)
             .Encode();
         node->SetText(prefixed);
-        return true;
+        return decision.Description;
     }
+
+    // Diagnostics (#54): a row that starts like a duplicate group but didn't match it is
+    // probably a kept listing that should have been prefixed. Logged once per row text.
+    private void LogNearMiss(string rowText, IReadOnlyDictionary<string, int> groups)
+    {
+        var description = RowPrefixMatcher.NearMiss(rowText, groups);
+        if (description is null || !this.loggedNearMisses.Add(rowText))
+            return;
+
+        Plugin.Log.Debug(
+            "PF prefix NEAR MISS: row {Row} vs group {Group} (row {RowLength} chars, group {GroupLength} chars)",
+            Quote(rowText),
+            Quote(description),
+            rowText.Length,
+            description.Length);
+    }
+
+    // Shows hidden characters (line breaks, tabs) so mismatches are visible in the log.
+    private static string Quote(string text) =>
+        "\"" + text.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\t", "\\t") + "\"";
+
+    private static string Short(string text) => text.Length > 40 ? text[..40] + "…" : text;
 
     private void RestoreOriginalText()
     {
@@ -156,9 +189,15 @@ internal sealed unsafe class ListingPrefixer : IDisposable
     }
 
     // Debug summary, logged only when it changes. Shows whether rows are being matched in game.
-    private void LogSummary(int groupCount, int matchedRows)
+    // Debug summary, logged only when it changes. Names the groups whose kept row is (and isn't)
+    // prefixed on screen right now, so a missing [N] can be traced to its group (#54).
+    // Groups scrolled out of view are expected under "not on screen".
+    private void LogSummary(IReadOnlyDictionary<string, int> groups, HashSet<string> matched)
     {
-        var summary = $"{matchedRows} rows matched for {groupCount} duplicate groups";
+        var prefixed = groups.Keys.Where(matched.Contains).Select(Short).OrderBy(d => d, StringComparer.Ordinal);
+        var missing = groups.Keys.Where(d => !matched.Contains(d)).Select(Short).OrderBy(d => d, StringComparer.Ordinal);
+        var summary =
+            $"{matched.Count} of {groups.Count} groups prefixed on screen | prefixed: [{string.Join(" ; ", prefixed)}] | not on screen: [{string.Join(" ; ", missing)}]";
         if (summary == this.lastLoggedSummary)
             return;
 

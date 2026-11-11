@@ -146,6 +146,28 @@ public class RowPrefixMatcherTests
         Assert.Null(RowPrefixMatcher.DescriptionBehindOwnPrefix("[3] Unknown", known));
     }
 
+    [Theory]
+    [InlineData("Come to my venue\nDoors at 9pm")]   // row shows an extra line
+    [InlineData("Come to my venue tonight")]         // row text longer than the description
+    [InlineData("Come to my ven")]                   // row cut short without an ellipsis
+    [InlineData("[Practice] Come to my venue!!")]    // game tag plus a different ending
+    public void Rows_that_start_like_a_group_but_dont_match_are_near_misses(string row)
+    {
+        Assert.Null(RowPrefixMatcher.Decide(row, Groups));
+        Assert.Equal("Come to my venue", RowPrefixMatcher.NearMiss(row, Groups));
+    }
+
+    [Theory]
+    [InlineData("Come to my venue")]          // matches: not a miss
+    [InlineData("[3] Come to my venue")]      // already prefixed: not a miss
+    [InlineData("Something unrelated")]       // doesn't start like any group
+    [InlineData("Come to")]                   // shorter than the near-miss length
+    [InlineData("")]
+    public void Matching_or_unrelated_rows_are_not_near_misses(string row)
+    {
+        Assert.Null(RowPrefixMatcher.NearMiss(row, Groups));
+    }
+
     [Fact]
     public void Works_with_tracker_groups()
     {
