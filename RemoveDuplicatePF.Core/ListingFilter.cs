@@ -7,20 +7,29 @@ namespace RemoveDuplicatePF.Core;
 /// </summary>
 public sealed class ListingFilter
 {
+    private readonly ResultSetBoundary boundary = new();
+
     /// <summary>The grouping state for the current result set.</summary>
     public DuplicateTracker Tracker { get; } = new();
 
     /// <summary>
-    /// Returns the visibility to write back for a listing.
+    /// Returns the visibility to write back for a listing. Duplicate tracking
+    /// resets at the start of each result set (search, refresh, category or page),
+    /// so counts are always per page.
     /// </summary>
+    /// <param name="batchNumber">Dalamud's <c>args.BatchNumber</c> (the segment number).</param>
     /// <param name="listingId">Server listing ID.</param>
     /// <param name="description">Listing description text as shown to players.</param>
     /// <param name="currentlyVisible">
     /// The current <c>args.Visible</c> value. It is shared with other plugins,
     /// so a listing another plugin already hid stays hidden and is not counted.
     /// </param>
-    public bool Decide(ulong listingId, string? description, bool currentlyVisible)
+    public bool Decide(int batchNumber, ulong listingId, string? description, bool currentlyVisible)
     {
+        // Track result-set boundaries for every listing, including ones another plugin hid.
+        if (this.boundary.IsNewResultSet(batchNumber, listingId))
+            this.Tracker.Reset();
+
         // Never un-hide another plugin's decision, and don't let a listing the
         // player won't see become the kept copy of a group.
         if (!currentlyVisible)
