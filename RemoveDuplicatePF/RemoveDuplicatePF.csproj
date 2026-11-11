@@ -9,8 +9,17 @@
     <Author>pearstopher</Author>
     <Name>Remove Duplicate PF</Name>
     <Punchline>Collapses duplicate Party Finder listings into one.</Punchline>
-    <Description>Hides Party Finder listings whose text exactly matches another listing and shows how many duplicates were combined. No settings: enable it and it works.</Description>
+    <Description>Combines duplicate Party Finder listings (ads that start with the same 30 characters) into one, marks it with a coloured [N] count, and shows the number combined in the Party Finder title. No settings: enable it and it works.</Description>
     <RepoUrl>https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF</RepoUrl>
+    <IconUrl>https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-Duplicate-PF/main/images/icon.png</IconUrl>
     <Tags>party finder;duplicates;filter</Tags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Plugin icon: 512x512 square PNG. Dalamud shows a dev plugin's icon from images/icon.png next to its DLL. -->
+    <Content Include="..\images\icon.png" Link="images\icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
 </Project>
