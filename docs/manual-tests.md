@@ -62,8 +62,8 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
    - **Expected:** prefixes update to match the new results; stale counts don't stay on screen.
 5. With Party Finder open, disable the plugin in `/xlplugins`.
    - **Expected:** the `[N]` prefixes disappear straight away (hidden duplicates come back on the next refresh).
-6. With Debug+ logging, check for `PF prefix: X rows matched for Y duplicate groups` lines.
-   - **Expected:** X is roughly equal to Y while the matching rows are on screen. **If X stays 0 while there are duplicate groups,** the row text doesn't match the descriptions. Report it, and note what a duplicate's row looks like (a screenshot helps).
+6. With Debug+ logging, check the `PF prefix: N of M groups prefixed on screen | prefixed: […] | not on screen: […]` lines (#54).
+   - **Expected:** while you scroll, each group moves from "not on screen" to "prefixed" when its kept row is visible. **A `PF prefix NEAR MISS:` line** means a row started like a duplicate group but didn't match it. Report it; the line shows both texts.
 7. Open a prefixed listing's details.
    - **Expected:** the details window shows the original description without the prefix (expected and fine).
 
