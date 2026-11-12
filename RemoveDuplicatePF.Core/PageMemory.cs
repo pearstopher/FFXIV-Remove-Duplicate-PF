@@ -11,11 +11,17 @@ namespace RemoveDuplicatePF.Core;
 /// <item>A new search (window opened, Refresh, category change) starts on page 1 and clears
 /// everything. Going back to page 1 with Previous keeps the other pages (#80).</item>
 /// <item>Each visit to a page replaces that page's entry (results can change between visits).</item>
+/// <item>The same listing (same ID) shown on an earlier page and sent again on a later one is shown
+/// again, as the game does without the plugin. Pages are positions in a list that keeps changing,
+/// and the game's Previous can land early, so neighbouring pages often overlap (#84).</item>
 /// </list>
 /// </remarks>
 public sealed class PageMemory
 {
     private readonly Dictionary<int, HashSet<string>> keysByPage = new();
+
+    // page -> IDs of the listings left visible on it (#84)
+    private readonly Dictionary<int, HashSet<ulong>> shownIdsByPage = new();
 
     /// <summary>Call when a result set for <paramref name="page"/> (one-based) starts arriving.</summary>
     /// <param name="page">The one-based page.</param>
@@ -23,9 +29,29 @@ public sealed class PageMemory
     public void StartPage(int page, bool newSearch = true)
     {
         if (page <= 1 && newSearch)
+        {
             this.keysByPage.Clear();
+            this.shownIdsByPage.Clear();
+        }
 
         this.keysByPage[page] = new HashSet<string>(StringComparer.Ordinal);
+        this.shownIdsByPage[page] = new HashSet<ulong>();
+    }
+
+    /// <summary>
+    /// Whether this exact listing was left visible on a page before <paramref name="page"/>: the
+    /// pages overlap, and it should be shown again rather than hidden (#84).
+    /// </summary>
+    public bool ShownOnEarlierPage(int page, ulong listingId) =>
+        this.shownIdsByPage.Any(entry => entry.Key < page && entry.Value.Contains(listingId));
+
+    /// <summary>Records that listing <paramref name="listingId"/> was left visible on <paramref name="page"/>.</summary>
+    public void RecordShown(int page, ulong listingId)
+    {
+        if (!this.shownIdsByPage.TryGetValue(page, out var ids))
+            this.shownIdsByPage[page] = ids = new HashSet<ulong>();
+
+        ids.Add(listingId);
     }
 
     /// <summary>

@@ -95,6 +95,45 @@ public class PageTrackerTests
         Assert.False(tracker.Unreliable);
     }
 
+    [Theory]
+    [InlineData("51-93", 43)]
+    [InlineData("1-50", 50)]
+    [InlineData("251-252", 2)]
+    [InlineData("101-101", 1)]
+    public void Range_text_gives_the_count(string text, int count) =>
+        Assert.Equal(count, PageRange.CountOf(text));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("93-51")]
+    [InlineData("0-0")]
+    public void Text_that_isnt_a_range_gives_no_count(string text) =>
+        Assert.Null(PageRange.CountOf(text));
+
+    [Fact]
+    public void Range_text_left_over_from_the_previous_page_is_skipped_not_a_mismatch()
+    {
+        // #84, 20:37:41: page 6 (2 listings) arrived while the window still showed page 5's "201-238".
+        var tracker = new PageTracker();
+
+        Assert.False(tracker.Verify(6, "201-238", displayedCount: 2));
+        Assert.False(tracker.Verify(6, "201-238", displayedCount: 2));
+        Assert.False(tracker.Unreliable);
+
+        // Once redrawn it's checked as usual.
+        Assert.False(tracker.Verify(6, "251-252", displayedCount: 2));
+        Assert.False(tracker.Unreliable);
+    }
+
+    [Fact]
+    public void A_real_mismatch_with_matching_counts_is_still_caught()
+    {
+        var tracker = new PageTracker();
+
+        Assert.False(tracker.Verify(3, "51-93", displayedCount: 43));
+        Assert.True(tracker.Verify(3, "51-93", displayedCount: 43));
+    }
+
     [Fact]
     public void Result_sets_record_their_page()
     {

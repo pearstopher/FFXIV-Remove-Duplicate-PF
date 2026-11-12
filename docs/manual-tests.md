@@ -105,6 +105,9 @@ The count is for the **page currently shown**.
    - **Expected:** each time, the `PF result set` line says `(page 1, new search)`, and going forward hides only what the new page 1 has.
 5. Switch back and forth between two categories that each have only a few listings.
    - **Expected:** each switch logs its own `PF result set` line with the right listing count; the two categories are never merged into one set.
+6. **Overlapping pages (#84):** in **Others** (a filtered category), go Next to the last page, then Previous back to page 1. Do the same in the biggest category.
+   - **Expected:** no page is blank or unexpectedly short, the range text (bottom right) matches what you'd see without the plugin, and Next is there whenever it would be without the plugin. A page may repeat a few listings from the page before; that's the game's own overlap and it happens without the plugin too.
+   - **Expected:** no `page index disagrees with the window` warning in the log.
 
 ## Other Party Finder plugins (#28)
 
