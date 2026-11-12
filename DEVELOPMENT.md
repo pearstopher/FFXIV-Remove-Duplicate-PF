@@ -183,6 +183,7 @@ The plugin isn't in the official Dalamud repo yet. The submission files are draf
 - **Updates can go straight to stable** after that. There's no requirement to ship testing builds; testing the update yourself (section 7, the manual tests) is enough.
 - **Bump `<Version>` in the csproj first** (section 8). The build bot builds the commit exactly as it is, so the version must already be right in that commit.
 - **Players get it after the Dalamud team reviews and merges the PR**, so official updates aren't instant. The GitHub release from section 8 only updates the custom repo (`repo.json`).
+- **Keep releasing to the custom repo too.** It stays as a backup after the plugin is official, but the README no longer tells players to add it ([#112](docs/dalamud-repo-standards.md#the-custom-repo-after-acceptance-112)).
 
 ## Troubleshooting
 
