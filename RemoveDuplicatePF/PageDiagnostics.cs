@@ -1,19 +1,29 @@
+using System;
+using System.Collections.Generic;
 using Dalamud.Game.Text.SeStringHandling;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Info;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 
 namespace RemoveDuplicatePF;
 
 /// <summary>
-/// RESEARCH ONLY (#71), not for merging: logs the Party Finder window's page/range texts so
-/// we can see whether they already show the new page when a result set starts arriving.
+/// RESEARCH ONLY (#71, #73), not for merging. Logs the Party Finder window's page text, and at
+/// each result-set start, every byte of <c>AgentLookingForGroup</c> and <c>InfoProxyCrossRealm</c>
+/// that changed since the previous result-set start, to find where the game keeps the page.
 /// </summary>
 internal static unsafe class PageDiagnostics
 {
-    private static string lastWindowState = string.Empty;
+    private const int AgentSize = 0x36D8;   // sizeof(AgentLookingForGroup)
+    private const int ProxySize = 0x1A58;   // sizeof(InfoProxyCrossRealm)
+    private const int MaxChangesLogged = 400;
 
-    /// <summary>Logs the window state at the moment a result set starts arriving.</summary>
+    private static string lastWindowState = string.Empty;
+    private static byte[]? lastAgent;
+    private static byte[]? lastProxy;
+
+    /// <summary>Logs the window state and changed struct bytes when a result set starts arriving.</summary>
     public static void LogResultSetStart(int resultSetNumber, int batchNumber)
     {
         Plugin.Log.Debug(
@@ -21,6 +31,20 @@ internal static unsafe class PageDiagnostics
             resultSetNumber,
             batchNumber,
             Describe());
+
+        var agent = AgentLookingForGroup.Instance();
+        if (agent == null)
+            return;
+
+        var agentNow = new ReadOnlySpan<byte>(agent, AgentSize).ToArray();
+        var proxy = agent->InfoProxyCrossRealm;
+        var proxyNow = proxy == null ? null : new ReadOnlySpan<byte>(proxy, ProxySize).ToArray();
+
+        Plugin.Log.Debug("PF page diag3: set #{Set} agent changes: {Changes}", resultSetNumber, Diff(lastAgent, agentNow));
+        Plugin.Log.Debug("PF page diag3: set #{Set} proxy changes: {Changes}", resultSetNumber, Diff(lastProxy, proxyNow));
+
+        lastAgent = agentNow;
+        lastProxy = proxyNow;
     }
 
     /// <summary>Logs the window state whenever it changes (called from the window's update listeners).</summary>
@@ -34,6 +58,32 @@ internal static unsafe class PageDiagnostics
         Plugin.Log.Debug("PF page diag: window now | {State}", state);
     }
 
+    // "0x1234=05>06 ..." for each changed byte, or "(first)" when there's nothing to compare yet.
+    private static string Diff(byte[]? before, byte[]? now)
+    {
+        if (now == null)
+            return "(missing)";
+        if (before == null || before.Length != now.Length)
+            return "(first)";
+
+        var changes = new List<string>();
+        for (var i = 0; i < now.Length; i++)
+        {
+            if (before[i] == now[i])
+                continue;
+
+            if (changes.Count == MaxChangesLogged)
+            {
+                changes.Add("…");
+                break;
+            }
+
+            changes.Add($"0x{i:X4}={before[i]:X2}>{now[i]:X2}");
+        }
+
+        return changes.Count == 0 ? "(none)" : string.Join(" ", changes);
+    }
+
     private static string Describe()
     {
         var addon = (AddonLookingForGroup*)Plugin.GameGui.GetAddonByName("LookingForGroup").Address;
@@ -43,32 +93,9 @@ internal static unsafe class PageDiagnostics
         var results = addon == null ? "(no window)" : Text(addon->ResultsCountTextNode);
         var agentInfo = agent == null
             ? "(no agent)"
-            : $"displayed={agent->NumberOfListingsDisplayed} category={agent->CategoryTab} area={agent->SearchAreaTab} firstId={agent->Listings.ListingIds[0]}";
+            : $"displayed={agent->NumberOfListingsDisplayed} category={agent->CategoryTab} area={agent->SearchAreaTab}";
 
-        return $"pageText=\"{page}\" resultsText=\"{results}\" {agentInfo} {AgentBytes(agent)}";
-    }
-
-    // Round 2: raw agent bytes around the known page-related fields (NumberOfListingsDisplayed at
-    // 0x36B2, SearchAreaTab 0x36B9, CategoryTab 0x36BB, GroupTypeTab 0x36BC), looking for a page
-    // index or offset that already changes before the new results arrive.
-    private const int DumpStart = 0x3690;
-    private const int DumpEnd = 0x36D8; // sizeof(AgentLookingForGroup)
-
-    private static string AgentBytes(AgentLookingForGroup* agent)
-    {
-        if (agent == null)
-            return string.Empty;
-
-        var bytes = (byte*)agent;
-        var hex = new System.Text.StringBuilder("agent[0x3690..]=");
-        for (var offset = DumpStart; offset < DumpEnd; offset++)
-        {
-            if (offset > DumpStart && (offset - DumpStart) % 8 == 0)
-                hex.Append(' ');
-            hex.Append(bytes[offset].ToString("X2"));
-        }
-
-        return hex.ToString();
+        return $"pageText=\"{page}\" resultsText=\"{results}\" {agentInfo}";
     }
 
     private static string Text(AtkTextNode* node) =>
