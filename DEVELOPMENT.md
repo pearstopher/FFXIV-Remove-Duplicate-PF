@@ -119,11 +119,12 @@ Unit tests cover the logic. The in-game check covers the hooks and UI. A change 
 
 ## 8. Releasing a new version
 
-Releases are made by pushing a version tag. Everything else is automated by [.github/workflows/release.yml](.github/workflows/release.yml).
+The version lives in `<Version>` in [RemoveDuplicatePF/RemoveDuplicatePF.csproj](RemoveDuplicatePF/RemoveDuplicatePF.csproj), because the official Dalamud repo builds the csproj exactly as committed (#110). A release bumps it in a commit, then pushes a matching tag. Everything else is automated by [.github/workflows/release.yml](.github/workflows/release.yml).
 
 1. Make sure `main` has everything you want to release, CI is green, and the manual tests pass.
 2. Pick the next version (`vMAJOR.MINOR.PATCH`, for example `v1.0.1` for a fix, `v1.1.0` for a new feature).
-3. Tag `main` and push the tag:
+3. Set `<Version>` in the csproj to that version with `.0` on the end (`v1.0.1` → `1.0.1.0`), and merge that change to `main` through a PR like any other change.
+4. Tag `main` and push the tag:
 
    ```sh
    git checkout main
@@ -132,17 +133,20 @@ Releases are made by pushing a version tag. Everything else is automated by [.gi
    git push origin v1.0.1
    ```
 
-4. The **Release** workflow then:
-   - builds and tests with the version from the tag (`v1.0.1` → `1.0.1.0`);
+5. The **Release** workflow then:
+   - checks that the tag matches `<Version>` in the csproj, and stops without releasing anything if it doesn't;
+   - builds and tests;
    - publishes a **public** GitHub Release named after the tag, with `latest.zip` attached and generated release notes;
    - regenerates `repo.json` on `main` (version, download links, Dalamud API level, update time) with [.github/scripts/make_repo_json.py](.github/scripts/make_repo_json.py), and commits it.
-5. Players get the update the next time Dalamud checks the custom repo:
+6. Players get the update the next time Dalamud checks the custom repo:
 
    ```
    https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-PF-Duplicates/main/repo.json
    ```
 
-A pushed tag publishes a public release straight away. If a release goes wrong, fix it on `main` and release a new version rather than reusing the tag.
+A pushed tag publishes a public release straight away. If a release goes wrong, fix it on `main` and release a new version rather than reusing the tag. If the version check fails, nothing was published: delete the tag (`git push origin :v1.0.1` and `git tag -d v1.0.1`), fix the csproj, and tag again.
+
+A unit test also fails if the csproj version is ever older than the one `repo.json` already publishes.
 
 ## 9. Staying up to date after patches
 
