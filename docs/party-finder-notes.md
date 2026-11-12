@@ -124,6 +124,29 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 
 **Decision (owner, 2026-11-11): no cross-page combining.** Counts stay per page. The plugin only sees pages the game downloads; it must not request other pages itself, since that would send extra server requests and change what the window is doing (#11). Combining across pages already visited was also rejected: counts on a page would change after visiting another, and results would depend on browsing order. The last few result sets are kept only to tell which page is on screen (#51), never to combine them.
 
+**Reversed (owner, 2026-11-11, #75):** listings already seen on an **earlier** page are hidden on later pages, and the plugin still never requests pages itself. See section 7 for how the page number is found.
+
+## 7. Which page a result set belongs to (#71, #73)
+
+Needed by #74 and #75: the hide decision is made per listing as it arrives, so the page must be known **before** the window redraws.
+
+| Source | Gives the page? | Valid when results start arriving? |
+| --- | --- | --- |
+| Window range text, `AddonLookingForGroup.CurrentPageTextNode` (`1-42`, `51-93`, `101-147`, `151-162`) | Yes: page = (start − 1) / 50 + 1, page size 50 | **No:** still shows the previous page; updates a frame after the first segment |
+| Window `ResultsCountTextNode` (`42(306)`) | No: shown count and server total | - |
+| `AgentLookingForGroup` (whole struct, 0x36D8 bytes) | **No:** no field follows the page | - |
+| **`InfoProxyCrossRealm` + 0x0484** (unmapped byte, before `LocalPlayerGroupIndex` at 0x485) | **Yes: zero-based page index** | **Yes:** already the new page when the first listing arrives |
+
+**Evidence (owner's walk-through, 2026-11-11 19:34, `Others`, 4 pages):** at each result-set start, byte 0x0484 was `0 1 2 3 2 1 0 1 0` for pages `1 2 3 4 3 2 1 2 1` (Next ×3, Previous ×3, Next, Refresh). It was the only byte of 108 changing bytes in both structs that tracked the page. Reached through `AgentLookingForGroup.InfoProxyCrossRealm`. No hook is needed; it's a plain read.
+
+**Other behaviour seen:**
+- **Refresh, opening the window and changing category load page 1.** Only Next and Previous reach other pages.
+- **The game empties its displayed list** (`NumberOfListingsDisplayed == 0`) whenever it requests results; #72 uses this.
+
+**Caveats for #74:**
+- 0x0484 isn't in FFXIVClientStructs, so a game patch could move it. #74 cross-checks it against the range text once each result set has finished, and logs a mismatch, so the patch-day CI and manual tests catch it. On any mismatch or out-of-range value, treat the set as page 1 (hide nothing extra).
+- Category changes weren't exercised in the round-3 session. They load page 1 per rounds 1 and 2, and the cross-check covers them.
+
 ---
 
 ## Other notes for later issues
