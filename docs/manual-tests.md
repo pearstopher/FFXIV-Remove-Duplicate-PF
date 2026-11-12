@@ -103,7 +103,11 @@ The count is for the **page currently shown**.
    - **Expected:** page 1 shows everything as normal ("0 hidden from earlier pages"), and its `PF result set` line says `(page 1, same search)` (#80). Next to page 2 and 3 again: page 3 still hides what page 2 showed.
 4. On page 2 or 3, press Refresh. Then do the same with a category tab, and by closing and reopening the window.
    - **Expected:** each time, the `PF result set` line says `(page 1, new search)`, and going forward hides only what the new page 1 has.
-5. Switch back and forth between two categories that each have only a few listings.
+5. **Counts carried back (#81):** on page 2, note a listing that page 1 showed (it's hidden on page 2, so look at "hidden from earlier pages" in the log). Press Previous.
+   - **Expected:** that listing's `[N]` on page 1 is higher than before, by the number of copies page 2 had (a single listing becomes `[2]`). The `PF prefix:` log line shows each group as `… ×N` with the new total. The title for page 1 is the same as before.
+   - Next, then Previous again. **Expected:** the `[N]` doesn't go up again.
+   - Press Refresh. **Expected:** the `[N]` go back to page 1's own counts.
+6. Switch back and forth between two categories that each have only a few listings.
    - **Expected:** each switch logs its own `PF result set` line with the right listing count; the two categories are never merged into one set.
 6. **Overlapping pages (#84):** in **Others** (a filtered category), go Next to the last page, then Previous back to page 1. Do the same in the biggest category.
    - **Expected:** no page is blank or unexpectedly short, the range text (bottom right) matches what you'd see without the plugin, and Next is there whenever it would be without the plugin. A page may repeat a few listings from the page before; that's the game's own overlap and it happens without the plugin too.
@@ -113,7 +117,7 @@ The count is for the **page currently shown**.
 
 If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#10 checks with them enabled, once after a **full game restart** and once after **re-enabling** Remove Duplicate PF in `/xlplugins`. The order plugins run in differs between those two cases (see `docs/party-finder-notes.md`, "Compatibility with other Party Finder plugins").
 
-- **Expected:** in both cases, the title count equals "hidden as duplicates" plus "hidden from earlier pages" in the page's `PF result set` line (on page 1, the sum of N − 1 over the `[N]` prefixes).
+- **Expected:** in both cases, the title count equals "hidden as duplicates" plus "hidden from earlier pages" in the page's `PF result set` line (on page 1 of a new search, the sum of N − 1 over the `[N]` prefixes; after going back from a later page, the `[N]` can be higher, #81).
 - **If the title is higher only after a restart,** another plugin hid a listing we kept. File a bug and include the times of both runs.
 
 ## Enable/disable cycle and no side effects (#11)

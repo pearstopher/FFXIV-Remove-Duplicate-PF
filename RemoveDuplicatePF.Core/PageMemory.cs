@@ -23,6 +23,9 @@ public sealed class PageMemory
     // page -> IDs of the listings left visible on it (#84)
     private readonly Dictionary<int, HashSet<ulong>> shownIdsByPage = new();
 
+    // match key -> IDs of listings hidden because an earlier page had that key, this search (#81)
+    private readonly Dictionary<string, HashSet<ulong>> carriedIdsByKey = new(StringComparer.Ordinal);
+
     /// <summary>Call when a result set for <paramref name="page"/> (one-based) starts arriving.</summary>
     /// <param name="page">The one-based page.</param>
     /// <param name="newSearch">Whether a page-1 result set starts a new search (<see cref="SearchStart"/>).</param>
@@ -32,6 +35,7 @@ public sealed class PageMemory
         {
             this.keysByPage.Clear();
             this.shownIdsByPage.Clear();
+            this.carriedIdsByKey.Clear();
         }
 
         this.keysByPage[page] = new HashSet<string>(StringComparer.Ordinal);
@@ -78,4 +82,27 @@ public sealed class PageMemory
 
         keys.Add(DescriptionMatch.Key(description));
     }
+
+    /// <summary>
+    /// Records a listing hidden because an earlier page had its key, so the earlier page's
+    /// <c>[N]</c> can include it (#81). Each listing ID counts once per search, however often
+    /// its page is revisited.
+    /// </summary>
+    public void RecordCarried(ulong listingId, string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return;
+
+        var key = DescriptionMatch.Key(description);
+        if (!this.carriedIdsByKey.TryGetValue(key, out var ids))
+            this.carriedIdsByKey[key] = ids = new HashSet<ulong>();
+
+        ids.Add(listingId);
+    }
+
+    /// <summary>IDs of listings with match key <paramref name="key"/> hidden on later pages this search (#81).</summary>
+    public IReadOnlySet<ulong> CarriedIds(string key) =>
+        this.carriedIdsByKey.TryGetValue(key, out var ids) ? ids : EmptyIds;
+
+    private static readonly HashSet<ulong> EmptyIds = new();
 }

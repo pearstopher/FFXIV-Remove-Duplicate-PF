@@ -110,10 +110,12 @@ public sealed class ListingFilter
         if (!repeat && this.memory.SeenOnEarlierPage(set.Page, description))
         {
             set.HiddenFromEarlierPages++;
+            this.memory.RecordCarried(listingId, description); // counted in the earlier page's [N] (#81)
             return false;
         }
 
         this.memory.Record(set.Page, description);
+        set.RecordId(listingId, description);
         var visible = set.Tracker.Observe(listingId, description);
         if (visible)
         {
@@ -155,7 +157,24 @@ public sealed class ListingFilter
         }
 
         return new DisplayedResultSet(
-            best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap, best.Page, best.HiddenFromEarlierPages);
+            best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap, best.Page, best.HiddenFromEarlierPages, this.PrefixGroups(best));
+    }
+
+    // The [N] for each kept listing on the page: its copies on this page plus copies hidden on later
+    // pages of this search, counting each listing ID once (#81). Only groups of 2 or more.
+    private Dictionary<string, int> PrefixGroups(ResultSet set)
+    {
+        var groups = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (key, description) in set.Tracker.KeptListings)
+        {
+            var ids = set.IdsByKey.TryGetValue(key, out var onPage) ? onPage : new HashSet<ulong>();
+            var carried = this.memory.CarriedIds(key);
+            var size = carried.Count == 0 ? ids.Count : ids.Union(carried).Count();
+            if (size > 1)
+                groups[description] = size;
+        }
+
+        return groups;
     }
 
     /// <summary>A summary of the newest result set, for the Debug log (#11).</summary>
@@ -198,6 +217,21 @@ public sealed class ListingFilter
 
         // Listings hidden because their match key was on an earlier page (#75).
         public int HiddenFromEarlierPages { get; set; }
+
+        // match key -> IDs of this page's listings with that key (kept and hidden copies) (#81).
+        public Dictionary<string, HashSet<ulong>> IdsByKey { get; } = new(StringComparer.Ordinal);
+
+        public void RecordId(ulong listingId, string? description)
+        {
+            if (string.IsNullOrWhiteSpace(description))
+                return;
+
+            var key = DescriptionMatch.Key(description);
+            if (!this.IdsByKey.TryGetValue(key, out var ids))
+                this.IdsByKey[key] = ids = new HashSet<ulong>();
+
+            ids.Add(listingId);
+        }
     }
 }
 
@@ -208,14 +242,22 @@ public sealed class ListingFilter
 /// <param name="MatchedListings">How many displayed listings it matched.</param>
 /// <param name="Page">The one-based page assigned to the result set (#74).</param>
 /// <param name="HiddenFromEarlierPages">Listings hidden because they appeared on an earlier page (#75).</param>
+/// <param name="PrefixGroups">
+/// The <c>[N]</c> to show, by kept listing description: copies on this page plus copies hidden on
+/// later pages of the search (#81). <c>null</c> means the page's own groups only.
+/// </param>
 public sealed record DisplayedResultSet(
     DuplicateTracker Tracker,
     int ResultSetNumber,
     bool IsNewest,
     int MatchedListings,
     int Page = 1,
-    int HiddenFromEarlierPages = 0)
+    int HiddenFromEarlierPages = 0,
+    IReadOnlyDictionary<string, int>? PrefixGroups = null)
 {
+    /// <summary>The <c>[N]</c> prefix for each kept listing that has one, by full description.</summary>
+    public IReadOnlyDictionary<string, int> Prefixes => this.PrefixGroups ?? this.Tracker.DuplicateGroupsByDescription;
+
     /// <summary>
     /// Listings hidden on this page: extra copies within the page plus listings already seen on an
     /// earlier page. The number in the title (#75). The visible copy of each group isn't counted.

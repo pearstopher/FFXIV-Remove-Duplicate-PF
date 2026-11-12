@@ -191,6 +191,15 @@ Only Next and Previous are matched by number, so if a patch renumbers the button
 
 Wider handling of changing results is tracked in #85.
 
+## 10. Counts carried back to earlier pages (#81)
+
+**As built:** when a listing is hidden because an earlier page had its key, `PageMemory` records its **listing ID** under that key for the rest of the search. The `[N]` for a kept listing is the number of **distinct listing IDs** with its key: this page's copies plus the recorded ones. Counting IDs rather than visits means:
+- going Previous and Next again, or the game resending a page, never adds the same listing twice;
+- a copy that moved from page 2 up to page 1 between visits counts once;
+- the copies show on the earliest page that shows the key, because later pages hide it entirely (#75). The one exception is a repeated listing (#84): if the very same listing shows again on a later page, its `[N]` there counts it plus the copies hidden on later pages, but not the earlier page's other copies (that page wasn't sent again). So page 1 can show `[3]` and page 2 `[2]` for the same ad.
+
+The title still uses the page's own hidden count (`DisplayedResultSet.HiddenTotal`), so it doesn't change. The `PF result set` line stays per page; the `PF prefix:` line shows each group's `[N]` (`… ×N`) including carried copies. A new search (#80) clears the recorded IDs.
+
 ---
 
 ## Other notes for later issues

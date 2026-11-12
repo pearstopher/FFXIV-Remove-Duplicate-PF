@@ -92,6 +92,12 @@ public sealed class DuplicateTracker
             .Where(g => g.Size > 1)
             .ToDictionary(g => g.Description, g => g.Size, StringComparer.Ordinal);
 
+    /// <summary>
+    /// Every kept listing (with or without duplicates): its match key and full description (#81).
+    /// </summary>
+    public IEnumerable<(string Key, string Description)> KeptListings =>
+        this.keptByKey.Select(k => (k.Key, k.Value.Description));
+
     /// <summary>Clears all state, ready for a new result set.</summary>
     public void Reset()
     {
