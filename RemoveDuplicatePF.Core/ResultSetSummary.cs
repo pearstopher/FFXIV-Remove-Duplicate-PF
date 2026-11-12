@@ -14,10 +14,11 @@ namespace RemoveDuplicatePF.Core;
 /// <param name="Received">Listings received in the result set.</param>
 /// <param name="HiddenByOthers">Listings another plugin had already hidden (not counted as duplicates).</param>
 /// <param name="Tracker">The result set's duplicate groups.</param>
-public sealed record ResultSetSummary(int ResultSetNumber, int Received, int HiddenByOthers, DuplicateTracker Tracker)
+/// <param name="Page">The one-based page assigned to the result set (#74).</param>
+public sealed record ResultSetSummary(int ResultSetNumber, int Received, int HiddenByOthers, DuplicateTracker Tracker, int Page = 1)
 {
     /// <summary>
-    /// For example: <c>result set #7: 50 listings, 5 hidden as duplicates in 4 groups, 1 hidden by
+    /// For example: <c>result set #7 (page 2): 50 listings, 5 hidden as duplicates in 4 groups, 1 hidden by
     /// other plugins | "BUNN$BEAT club night" ×3, "Dancers wanted" ×2, ...</c>
     /// Groups are listed largest first, then by key.
     /// </summary>
@@ -31,7 +32,7 @@ public sealed record ResultSetSummary(int ResultSetNumber, int Received, int Hid
 
         var text = string.Create(
             CultureInfo.InvariantCulture,
-            $"result set #{this.ResultSetNumber}: {this.Received} listings, {this.Tracker.HiddenCount} hidden as duplicates in {this.Tracker.DuplicateGroupCount} groups, {this.HiddenByOthers} hidden by other plugins");
+            $"result set #{this.ResultSetNumber} (page {this.Page}): {this.Received} listings, {this.Tracker.HiddenCount} hidden as duplicates in {this.Tracker.DuplicateGroupCount} groups, {this.HiddenByOthers} hidden by other plugins");
 
         var list = string.Join(", ", groups);
         return list.Length == 0 ? text : $"{text} | {list}";

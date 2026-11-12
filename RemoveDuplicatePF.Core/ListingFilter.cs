@@ -34,6 +34,9 @@ public sealed class ListingFilter
     /// <summary>The grouping state for the newest result set.</summary>
     public DuplicateTracker Tracker => this.history.First!.Value.Tracker;
 
+    /// <summary>Assigns each result set its page and checks it against the window (#74).</summary>
+    public PageTracker Pages { get; } = new();
+
     /// <summary>
     /// Returns the visibility to write back for a listing.
     /// </summary>
@@ -48,11 +51,21 @@ public sealed class ListingFilter
     /// Whether the game's displayed list was empty when the listing arrived (#72);
     /// see <see cref="ResultSetBoundary.IsNewResultSet"/>. Leave <c>false</c> when unknown.
     /// </param>
-    public bool Decide(int batchNumber, ulong listingId, string? description, bool currentlyVisible, bool gameListEmpty = false)
+    /// <param name="gamePageIndex">
+    /// The game's zero-based page index when the listing arrived (#74), or <c>null</c> if unknown.
+    /// Only the value at the first listing of a result set is used.
+    /// </param>
+    public bool Decide(
+        int batchNumber,
+        ulong listingId,
+        string? description,
+        bool currentlyVisible,
+        bool gameListEmpty = false,
+        int? gamePageIndex = null)
     {
         // Track result-set boundaries for every listing, including ones another plugin hid.
         if (this.boundary.IsNewResultSet(batchNumber, listingId, gameListEmpty))
-            this.StartNewSet();
+            this.StartNewSet(this.Pages.PageFor(gamePageIndex));
 
         var set = this.history.First!.Value;
         set.Received++;
@@ -93,7 +106,7 @@ public sealed class ListingFilter
             }
         }
 
-        return new DisplayedResultSet(best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap);
+        return new DisplayedResultSet(best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap, best.Page);
     }
 
     /// <summary>A summary of the newest result set, for the Debug log (#11).</summary>
@@ -102,20 +115,23 @@ public sealed class ListingFilter
         get
         {
             var set = this.history.First!.Value;
-            return new ResultSetSummary(set.Number, set.Received, set.HiddenByOthers, set.Tracker);
+            return new ResultSetSummary(set.Number, set.Received, set.HiddenByOthers, set.Tracker, set.Page);
         }
     }
 
-    private void StartNewSet()
+    private void StartNewSet(int page = 1)
     {
-        this.history.AddFirst(new ResultSet(this.nextSetNumber++));
+        this.history.AddFirst(new ResultSet(this.nextSetNumber++, page));
         while (this.history.Count > HistorySize)
             this.history.RemoveLast();
     }
 
-    private sealed class ResultSet(int number)
+    private sealed class ResultSet(int number, int page)
     {
         public int Number { get; } = number;
+
+        // One-based page this result set belongs to (#74).
+        public int Page { get; } = page;
 
         public DuplicateTracker Tracker { get; } = new();
 
@@ -134,4 +150,5 @@ public sealed class ListingFilter
 /// <param name="ResultSetNumber">Sequence number of the result set since load (1 = first page received), for the debug log.</param>
 /// <param name="IsNewest">Whether it's the most recently received result set.</param>
 /// <param name="MatchedListings">How many displayed listings it matched.</param>
-public sealed record DisplayedResultSet(DuplicateTracker Tracker, int ResultSetNumber, bool IsNewest, int MatchedListings);
+/// <param name="Page">The one-based page assigned to the result set (#74).</param>
+public sealed record DisplayedResultSet(DuplicateTracker Tracker, int ResultSetNumber, bool IsNewest, int MatchedListings, int Page = 1);

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using Dalamud.Game.Text.SeStringHandling;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using RemoveDuplicatePF.Core;
 
@@ -74,7 +75,10 @@ internal sealed unsafe class TitleUpdater : IDisposable
 
             // Use the result set for the page on screen, not just the newest one (#51). The total
             // includes the kept listing of each group, so it equals the sum of the [N] prefixes (#64).
-            var total = DisplayedListings.ResultSetOnScreen(this.filter).Tracker.DuplicateListingCount;
+            var shown = DisplayedListings.ResultSetOnScreen(this.filter);
+            this.VerifyPage((AddonLookingForGroup*)addon, shown);
+
+            var total = shown.Tracker.DuplicateListingCount;
             if (!SetTitle(addon, total) && !this.loggedMissingTitle)
             {
                 this.loggedMissingTitle = true;
@@ -84,6 +88,25 @@ internal sealed unsafe class TitleUpdater : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Error updating Party Finder title");
+        }
+    }
+
+    // Cross-checks the page assigned to the result set on screen against the window's range text
+    // (e.g. "51-93" = page 2), because the game's page index isn't a documented field (#74). Runs
+    // here so no extra window listener is needed. Only checks when the window is showing that
+    // result set's listings. Two mismatches in a row stop trusting the index for this session.
+    private void VerifyPage(AddonLookingForGroup* addon, DisplayedResultSet shown)
+    {
+        if (shown.MatchedListings == 0 || addon->CurrentPageTextNode == null)
+            return;
+
+        var rangeText = SeString.Parse(addon->CurrentPageTextNode->NodeText.AsSpan()).TextValue;
+        if (this.filter.Pages.Verify(shown.Page, rangeText))
+        {
+            Plugin.Log.Warning(
+                "Party Finder page index disagrees with the window (assigned page {Page}, window shows \"{Range}\"); counting every page as page 1 for this session",
+                shown.Page,
+                rangeText);
         }
     }
 

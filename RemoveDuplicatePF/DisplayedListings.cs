@@ -46,6 +46,25 @@ internal static unsafe class DisplayedListings
         return agent != null && agent->NumberOfListingsDisplayed == 0;
     }
 
+    /// <summary>
+    /// Offset of the zero-based Party Finder page index in <c>InfoProxyCrossRealm</c> (#73).
+    /// Not in FFXIVClientStructs, so <see cref="PageTracker.Verify"/> checks it against the window.
+    /// </summary>
+    private const int PageIndexOffset = 0x0484;
+
+    /// <summary>
+    /// The game's zero-based page index for the results being requested or received, or
+    /// <c>null</c> if it can't be read. Already correct when a result set's first listing arrives (#73).
+    /// </summary>
+    public static int? GamePageIndex()
+    {
+        var agent = AgentLookingForGroup.Instance();
+        if (agent == null || agent->InfoProxyCrossRealm == null)
+            return null;
+
+        return ((byte*)agent->InfoProxyCrossRealm)[PageIndexOffset];
+    }
+
     // Listing IDs the window is showing, from AgentLookingForGroup (0 = empty slot).
     private static ulong[] ReadIds()
     {
