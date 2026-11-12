@@ -28,7 +28,7 @@ Report results in the format under "After a session" in that guide.
 4. With Debug logging on, check the log.
    - **Expected:** one `PF result set #…` line per page load, naming only groups whose descriptions share their first 30 characters, and no errors.
 5. Disable the plugin in `/xlplugins`, then close and reopen Party Finder.
-   - **Expected:** all duplicates are visible again, and `Remove Duplicate PF unloaded` is in the log.
+   - **Expected:** all duplicates are visible again, and `Remove PF Duplicates unloaded` is in the log.
 6. Use the game normally: open a listing's details, join or leave a party, open other windows.
    - **Expected:** nothing outside the Party Finder list behaves differently.
 
@@ -112,7 +112,7 @@ The count is for the **page currently shown**.
 
 ## Other Party Finder plugins (#28)
 
-If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#10 checks with them enabled, once after a **full game restart** and once after **re-enabling** Remove Duplicate PF in `/xlplugins`. The order plugins run in differs between those two cases (see `docs/party-finder-notes.md`, "Compatibility with other Party Finder plugins").
+If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#10 checks with them enabled, once after a **full game restart** and once after **re-enabling** Remove PF Duplicates in `/xlplugins`. The order plugins run in differs between those two cases (see `docs/party-finder-notes.md`, "Compatibility with other Party Finder plugins").
 
 - **Expected:** in both cases, the title count equals "duplicates hidden" in the page's `PF result set` line (on page 1 of a new search, the sum of N − 1 over the `[N]` prefixes; after going back from a later page, the `[N]` can be higher).
 - **If the title is higher only after a restart,** another plugin hid a listing we kept. File a bug and include the times of both runs.
@@ -120,15 +120,15 @@ If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#1
 ## Enable/disable cycle and no side effects (#11)
 
 1. Open Party Finder on a busy category so `[N]` prefixes and the title count are showing.
-2. **With the window still open,** disable Remove Duplicate PF in `/xlplugins`.
-   - **Expected, straight away:** the `[N]` prefixes disappear and the title goes back to `Party Finder`. `/xllog` shows `Remove Duplicate PF unloaded` and no red `Error unloading …` lines.
+2. **With the window still open,** disable Remove PF Duplicates in `/xlplugins`.
+   - **Expected, straight away:** the `[N]` prefixes disappear and the title goes back to `Party Finder`. `/xllog` shows `Remove PF Duplicates unloaded` and no red `Error unloading …` lines.
    - **Expected after a refresh:** the hidden duplicates reappear. The game already received those listings with duplicates removed, and the plugin never sends requests itself, so they only come back when the game next loads the list.
 3. Enable it again.
    - **Expected:** a new `loaded (...)` line. After a refresh, duplicates are hidden and the prefixes and count return.
 4. Repeat the disable/enable cycle three times, ending enabled. Then close and reopen Party Finder.
    - **Expected:** everything still works, and prefixes and title suffixes never stack (no `[2] [2] …`, no repeated `(N duplicates hidden)`).
 5. Check that the plugin adds nothing else:
-   - `/xlplugins`: no **Settings** or **Open** button for Remove Duplicate PF (no config or main UI is registered).
-   - `/xlhelp`: no Remove Duplicate PF commands.
+   - `/xlplugins`: no **Settings** or **Open** button for Remove PF Duplicates (no config or main UI is registered).
+   - `/xlhelp`: no Remove PF Duplicates commands.
 6. With Debug+ logging, browse a few pages.
    - **Expected:** one `PF result set #…` summary line per page load, not one line per listing.
