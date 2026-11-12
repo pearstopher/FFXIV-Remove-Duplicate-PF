@@ -77,11 +77,11 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
 The count is for the **page currently shown**.
 
 1. Open a busy category with duplicates.
-   - **Expected:** the title reads `Party Finder (N duplicates)`, with `(N duplicates)` in the same colour as the `[N]` prefixes. **N is the sum of all the `[N]` prefixes on the page** (for example `[3] [2] [2]` → 7). In the Debug log it equals the sum of the `×N` group sizes in that page's `PF result set` line (#64).
+   - **Expected:** the title reads `Party Finder (N duplicates hidden)` (`1 duplicate hidden` when N is 1), with the suffix in the same colour as the `[N]` prefixes. **N counts hidden listings only:** each `[N]` adds N − 1 (the visible copy isn't counted), plus listings hidden because an earlier page had them (for example `[3] [2]` plus 4 from page 1 → 7). In the Debug log it equals "hidden as duplicates" plus "hidden from earlier pages" in that page's `PF result set` line (#75).
 2. Open a category or page with no duplicates.
    - **Expected:** the title is just `Party Finder`.
 3. Refresh, change category and change page a few times.
-   - **Expected:** the count updates each time. It never stacks (no `(7 duplicates) (7 duplicates)`).
+   - **Expected:** the count updates each time. It never stacks (no `(7 duplicates hidden) (7 duplicates hidden)`).
 4. Close Party Finder and reopen it.
    - **Expected:** the title starts as `Party Finder` and gains the count once listings load.
 5. With Party Finder open and showing a count, disable the plugin in `/xlplugins`.
@@ -90,14 +90,25 @@ The count is for the **page currently shown**.
    - **Expected:** one line each time the count changes. **If you see `Party Finder title text node not found`,** report it; the title count is then disabled but nothing else is affected.
 
 7. **Background re-fetch (#51):** go to page 2 with Next, then wait about 20 seconds without touching anything.
-   - **Expected:** the title keeps matching page 2. Add up the `[N]` prefixes on the page and compare with the title. The game may re-download page 1 in the background; that must not change the title or prefixes for page 2.
+   - **Expected:** the title keeps matching page 2 (compare it with page 2's `PF result set` line). The game may re-download page 1 in the background; that must not change the title or prefixes for page 2.
    - In the Debug log, `PF on screen: result set #N (older, M listings matched…)` means the plugin noticed a background fetch and kept using the page on screen. **If M is always 0,** the game's displayed-listings list isn't what we expected; report it.
+
+## Listings seen on earlier pages (#75)
+
+1. On a busy category with several pages, note a few listings on page 1, then press Next.
+   - **Expected:** none of page 1's listings (by their first 30 characters) appear on page 2, not even as a `[N]` group. The `PF result set #… (page 2)` line shows "E hidden from earlier pages".
+2. Go on to page 3.
+   - **Expected:** nothing from pages 1 or 2 appears.
+3. Go back to page 1 with Previous, or press Refresh.
+   - **Expected:** page 1 shows everything as normal ("0 hidden from earlier pages"). Going forward again hides only what the current page 1 has.
+4. Switch back and forth between two categories that each have only a few listings.
+   - **Expected:** each switch logs its own `PF result set` line with the right listing count; the two categories are never merged into one set.
 
 ## Other Party Finder plugins (#28)
 
 If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#10 checks with them enabled, once after a **full game restart** and once after **re-enabling** Remove Duplicate PF in `/xlplugins`. The order plugins run in differs between those two cases (see `docs/party-finder-notes.md`, "Compatibility with other Party Finder plugins").
 
-- **Expected:** in both cases, the title count equals the sum of the `[N]` prefixes on the page.
+- **Expected:** in both cases, the title count equals "hidden as duplicates" plus "hidden from earlier pages" in the page's `PF result set` line (on page 1, the sum of N − 1 over the `[N]` prefixes).
 - **If the title is higher only after a restart,** another plugin hid a listing we kept. File a bug and include the times of both runs.
 
 ## Enable/disable cycle and no side effects (#11)
@@ -109,7 +120,7 @@ If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#1
 3. Enable it again.
    - **Expected:** a new `loaded (...)` line. After a refresh, duplicates are hidden and the prefixes and count return.
 4. Repeat the disable/enable cycle three times, ending enabled. Then close and reopen Party Finder.
-   - **Expected:** everything still works, and prefixes and title suffixes never stack (no `[2] [2] …`, no repeated `(N duplicates)`).
+   - **Expected:** everything still works, and prefixes and title suffixes never stack (no `[2] [2] …`, no repeated `(N duplicates hidden)`).
 5. Check that the plugin adds nothing else:
    - `/xlplugins`: no **Settings** or **Open** button for Remove Duplicate PF (no config or main UI is registered).
    - `/xlhelp`: no Remove Duplicate PF commands.

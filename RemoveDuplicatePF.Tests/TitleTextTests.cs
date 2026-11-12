@@ -7,38 +7,41 @@ public class TitleTextTests
     [Theory]
     [InlineData(-1, null)]
     [InlineData(0, null)]
-    [InlineData(1, null)] // a duplicate group always has at least 2 listings
-    [InlineData(2, " (2 duplicates)")]
-    [InlineData(7, " (7 duplicates)")]
-    [InlineData(1234, " (1234 duplicates)")]
-    public void Suffix_reflects_the_total(int total, string? expected)
+    [InlineData(1, " (1 duplicate hidden)")]
+    [InlineData(2, " (2 duplicates hidden)")]
+    [InlineData(7, " (7 duplicates hidden)")]
+    [InlineData(1234, " (1234 duplicates hidden)")]
+    public void Suffix_reflects_the_hidden_count(int hidden, string? expected)
     {
-        Assert.Equal(expected, TitleText.Suffix(total));
+        Assert.Equal(expected, TitleText.Suffix(hidden));
     }
 
     [Fact]
-    public void Title_shows_the_total_after_the_games_title()
+    public void Title_shows_the_hidden_count_after_the_games_title()
     {
-        Assert.Equal("Party Finder (7 duplicates)", TitleText.Compose("Party Finder", 7));
+        Assert.Equal("Party Finder (7 duplicates hidden)", TitleText.Compose("Party Finder", 7));
     }
 
     [Fact]
-    public void Title_is_unchanged_when_there_are_no_duplicates()
+    public void Title_is_unchanged_when_nothing_is_hidden()
     {
         Assert.Equal("Party Finder", TitleText.Compose("Party Finder", 0));
     }
 
     [Fact]
-    public void Updating_the_total_replaces_the_old_suffix_instead_of_stacking()
+    public void Updating_the_count_replaces_the_old_suffix_instead_of_stacking()
     {
         var first = TitleText.Compose("Party Finder", 3);
 
-        Assert.Equal("Party Finder (8 duplicates)", TitleText.Compose(first, 8));
+        Assert.Equal("Party Finder (8 duplicates hidden)", TitleText.Compose(first, 8));
+        Assert.Equal("Party Finder (1 duplicate hidden)", TitleText.Compose(first, 1));
         Assert.Equal("Party Finder", TitleText.Compose(first, 0));
     }
 
     [Theory]
-    [InlineData("Party Finder (7 duplicates)", "Party Finder")]
+    [InlineData("Party Finder (7 duplicates hidden)", "Party Finder")]
+    [InlineData("Party Finder (1 duplicate hidden)", "Party Finder")]
+    [InlineData("Party Finder (7 duplicates)", "Party Finder")]           // v1.1.x wording
     [InlineData("Party Finder (12 duplicates combined)", "Party Finder")] // v1.0.0 wording
     [InlineData("Party Finder (1 duplicate combined)", "Party Finder")]   // v1.0.0 wording
     [InlineData("Party Finder", "Party Finder")]
@@ -48,25 +51,27 @@ public class TitleTextTests
         Assert.Equal(expected, TitleText.Original(current));
     }
 
-    [Fact]
-    public void Old_wording_is_replaced_not_stacked()
+    [Theory]
+    [InlineData("Party Finder (4 duplicates combined)")]
+    [InlineData("Party Finder (9 duplicates)")]
+    public void Older_wording_is_replaced_not_stacked(string oldTitle)
     {
-        Assert.Equal("Party Finder (7 duplicates)", TitleText.Compose("Party Finder (4 duplicates combined)", 7));
+        Assert.Equal("Party Finder (7 duplicates hidden)", TitleText.Compose(oldTitle, 7));
     }
 
     [Theory]
     [InlineData("Party Finder (beta)")]
-    [InlineData("Party Finder (12 duplicates) extra")]
-    [InlineData("Party Finder (twelve duplicates)")]
+    [InlineData("Party Finder (12 duplicates hidden) extra")]
+    [InlineData("Party Finder (twelve duplicates hidden)")]
     public void Other_text_in_brackets_is_not_treated_as_the_plugins_suffix(string title)
     {
         Assert.Equal(title, TitleText.Original(title));
     }
 
     [Fact]
-    public void Title_total_equals_the_sum_of_the_prefixes()
+    public void Title_counts_hidden_listings_not_the_visible_copies()
     {
-        // Owner's example: [3] [2] [2] on screen -> 7 (previously "4 duplicates combined").
+        // [3] [2] [2] on the page: 2 + 1 + 1 extra copies hidden (the 3 visible copies aren't counted).
         var tracker = new DuplicateTracker();
         var listings = new (ulong Id, string Text)[]
         {
@@ -78,12 +83,10 @@ public class TitleTextTests
         foreach (var (id, text) in listings)
             tracker.Observe(id, text);
 
-        var prefixTotal = tracker.DuplicateGroupsByDescription.Values.Sum();
+        var shown = new DisplayedResultSet(tracker, 1, true, 4);
 
-        Assert.Equal(7, prefixTotal);
-        Assert.Equal(prefixTotal, tracker.DuplicateListingCount);
-        Assert.Equal(tracker.HiddenCount + tracker.DuplicateGroupCount, tracker.DuplicateListingCount);
-        Assert.Equal("Party Finder (7 duplicates)", TitleText.Compose("Party Finder", tracker.DuplicateListingCount));
+        Assert.Equal(4, shown.HiddenTotal);
+        Assert.Equal("Party Finder (4 duplicates hidden)", TitleText.Compose("Party Finder", shown.HiddenTotal));
     }
 
     [Fact]
@@ -93,7 +96,9 @@ public class TitleTextTests
         tracker.Observe(1, "A");
         tracker.Observe(2, "B");
 
-        Assert.Equal(0, tracker.DuplicateListingCount);
-        Assert.Equal("Party Finder", TitleText.Compose("Party Finder", tracker.DuplicateListingCount));
+        var shown = new DisplayedResultSet(tracker, 1, true, 2);
+
+        Assert.Equal(0, shown.HiddenTotal);
+        Assert.Equal("Party Finder", TitleText.Compose("Party Finder", shown.HiddenTotal));
     }
 }

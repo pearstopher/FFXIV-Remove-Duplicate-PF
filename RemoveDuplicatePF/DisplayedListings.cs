@@ -51,6 +51,13 @@ internal static unsafe class DisplayedListings
         return agent != null && agent->NumberOfListingsDisplayed == 0;
     }
 
+    /// <summary>Whether the game's displayed listing list has listings right now (#75).</summary>
+    public static bool GameListHasListings()
+    {
+        var agent = AgentLookingForGroup.Instance();
+        return agent != null && agent->NumberOfListingsDisplayed > 0;
+    }
+
     /// <summary>
     /// Offset of the zero-based Party Finder page index in <c>InfoProxyCrossRealm</c> (#73).
     /// Not in FFXIVClientStructs, so <see cref="PageTracker.Verify"/> checks it against the window.

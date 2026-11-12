@@ -7,7 +7,8 @@ namespace RemoveDuplicatePF.Core;
 /// </summary>
 /// <remarks>
 /// Each result set (search, refresh, category or page) gets its own
-/// <see cref="DuplicateTracker"/>, so counts are always per page. The last
+/// <see cref="DuplicateTracker"/> for duplicates within the page. Listings already seen on an
+/// earlier page of the search are hidden entirely (#75, <see cref="PageMemory"/>). The last
 /// <see cref="HistorySize"/> result sets are kept, because the game can fetch a
 /// page in the background while a different page stays on screen (#51). The
 /// title and <c>[N]</c> prefixes must use <see cref="ForDisplayed"/>, which
@@ -37,6 +38,15 @@ public sealed class ListingFilter
     /// <summary>Assigns each result set its page and checks it against the window (#74).</summary>
     public PageTracker Pages { get; } = new();
 
+    // What earlier pages of the current search showed (#75).
+    private readonly PageMemory memory = new();
+
+    /// <summary>
+    /// Call each frame the game's displayed list has listings on screen (see
+    /// <see cref="ResultSetBoundary.NoteGameListShown"/>). Lets two small result sets in a row be told apart.
+    /// </summary>
+    public void NoteGameListShown() => this.boundary.NoteGameListShown();
+
     /// <summary>
     /// Returns the visibility to write back for a listing.
     /// </summary>
@@ -65,18 +75,32 @@ public sealed class ListingFilter
     {
         // Track result-set boundaries for every listing, including ones another plugin hid.
         if (this.boundary.IsNewResultSet(batchNumber, listingId, gameListEmpty))
-            this.StartNewSet(this.Pages.PageFor(gamePageIndex));
+        {
+            var page = this.Pages.PageFor(gamePageIndex);
+            this.StartNewSet(page);
+            this.memory.StartPage(page); // page 1 clears what earlier searches showed
+        }
 
         var set = this.history.First!.Value;
         set.Received++;
 
         // Never un-hide another plugin's decision, and don't let a listing the
-        // player won't see become the kept copy of a group.
+        // player won't see become the kept copy of a group or count as seen on this page.
         if (!currentlyVisible)
         {
             set.HiddenByOthers++;
             return false;
         }
+
+        // Earlier pages win: a listing already shown on an earlier page is hidden entirely,
+        // including the copy that would otherwise be kept here with an [N] (#75).
+        if (this.memory.SeenOnEarlierPage(set.Page, description))
+        {
+            set.HiddenFromEarlierPages++;
+            return false;
+        }
+
+        this.memory.Record(set.Page, description);
         var visible = set.Tracker.Observe(listingId, description);
         if (visible)
             set.ShownIds.Add(listingId);
@@ -114,7 +138,8 @@ public sealed class ListingFilter
             }
         }
 
-        return new DisplayedResultSet(best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap, best.Page);
+        return new DisplayedResultSet(
+            best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap, best.Page, best.HiddenFromEarlierPages);
     }
 
     /// <summary>A summary of the newest result set, for the Debug log (#11).</summary>
@@ -123,7 +148,8 @@ public sealed class ListingFilter
         get
         {
             var set = this.history.First!.Value;
-            return new ResultSetSummary(set.Number, set.Received, set.HiddenByOthers, set.Tracker, set.Page);
+            return new ResultSetSummary(
+                set.Number, set.Received, set.HiddenByOthers, set.Tracker, set.Page, set.HiddenFromEarlierPages);
         }
     }
 
@@ -150,6 +176,9 @@ public sealed class ListingFilter
         public int Received { get; set; }
 
         public int HiddenByOthers { get; set; }
+
+        // Listings hidden because their match key was on an earlier page (#75).
+        public int HiddenFromEarlierPages { get; set; }
     }
 }
 
@@ -159,4 +188,18 @@ public sealed class ListingFilter
 /// <param name="IsNewest">Whether it's the most recently received result set.</param>
 /// <param name="MatchedListings">How many displayed listings it matched.</param>
 /// <param name="Page">The one-based page assigned to the result set (#74).</param>
-public sealed record DisplayedResultSet(DuplicateTracker Tracker, int ResultSetNumber, bool IsNewest, int MatchedListings, int Page = 1);
+/// <param name="HiddenFromEarlierPages">Listings hidden because they appeared on an earlier page (#75).</param>
+public sealed record DisplayedResultSet(
+    DuplicateTracker Tracker,
+    int ResultSetNumber,
+    bool IsNewest,
+    int MatchedListings,
+    int Page = 1,
+    int HiddenFromEarlierPages = 0)
+{
+    /// <summary>
+    /// Listings hidden on this page: extra copies within the page plus listings already seen on an
+    /// earlier page. The number in the title (#75). The visible copy of each group isn't counted.
+    /// </summary>
+    public int HiddenTotal => this.Tracker.HiddenCount + this.HiddenFromEarlierPages;
+}

@@ -13,9 +13,9 @@ There are no settings: install it, enable it, and open Party Finder.
 
 - **Combines duplicate listings.** Listings whose descriptions start with the same 30 characters count as duplicates. Only one stays visible: the first one in the order the game shows them.
 - **Marks the one that stays** with a coloured **`[N]`** in front of its description, where N is the number of copies. For example, three copies of a venue ad become one listing showing **`[3]`** `Come to my venue tonight…`.
-- **Shows the total in the window title** in the same colour, for example **`Party Finder (7 duplicates)`**, for the page you're looking at. The number is the sum of the `[N]` counts on the page, so `[3]`, `[2]` and `[2]` make 7.
-- **Leaves listings with an empty description alone.** They're never combined.
-- **Counts each page separately.** Duplicates on different pages aren't combined.
+- **Hides listings you've already seen on an earlier page.** On page 2 and later, a listing that matches one from an earlier page is hidden, including every copy of it. Page 1 always shows everything, and going back to page 1 (or starting a new search) starts over.
+- **Shows how many listings are hidden in the window title** in the same colour, for example **`Party Finder (7 duplicates hidden)`**, for the page you're looking at. It counts only hidden listings: the extra copies behind each `[N]` plus listings hidden because an earlier page had them. So `[3]` and `[2]` on page 2, plus 4 listings already seen on page 1, make 2 + 1 + 4 = 7.
+- **Leaves listings with an empty description alone.** They're never combined or hidden.
 
 **About the 30-character rule:** ads that start with the same 30 characters are treated as the same ad, even if their endings differ, for example the same venue ad posted with different times. That's deliberate; see [the design decision](docs/party-finder-notes.md#design-decision-match-on-the-first-30-characters-42). Short descriptions (under 30 characters) must match exactly.
 

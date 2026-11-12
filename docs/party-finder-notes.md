@@ -110,7 +110,7 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
   2. After the final segment (`BatchNumber == 0`), on the next `PostRefresh`/`PostRequestedUpdate`: set the title (or subtitle) to the original plus ` (N duplicates hidden)`. Only touch it while the addon exists (check `IsAddonReady`/non-null).
   3. `PreFinalize` and plugin `Dispose`: restore the stored text and unregister all listeners (#11).
 - **Prefer the subtitle** if it is empty, because it leaves the game's title untouched. **To verify in game:** what the title and subtitle currently show, and whether the game resets them on refresh. If it does, re-apply on every refresh.
-- **As built (#10, verified in game 2026-11-11):** the count is appended to the **title**, which the owner confirmed displays correctly and updates on refresh and page changes. The subtitle isn't used and isn't needed. The title is re-checked after list updates and every 250 ms, and the count follows the page on screen (#51). **Changed in #64:** the title reads `Party Finder (N duplicates)`, where N is the **total** number of listings in duplicate groups (including the kept one in each), which equals the sum of the `[N]` prefixes. The suffix is shown in the prefix colour (`UIForeground`, `CountPrefix.DefaultColorId`). It was `N duplicates combined` (hidden copies only) in v1.0.0.
+- **As built (#10, verified in game 2026-11-11):** the count is appended to the **title**, which the owner confirmed displays correctly and updates on refresh and page changes. The subtitle isn't used and isn't needed. The title is re-checked after list updates and every 250 ms, and the count follows the page on screen (#51). **Changed in #64:** the title reads `Party Finder (N duplicates)`, where N is the **total** number of listings in duplicate groups (including the kept one in each), which equals the sum of the `[N]` prefixes. The suffix is shown in the prefix colour (`UIForeground`, `CountPrefix.DefaultColorId`). It was `N duplicates combined` (hidden copies only) in v1.0.0. **Changed in #75 (v1.2.0):** the title reads `Party Finder (N duplicates hidden)` (`1 duplicate hidden`), where N counts **hidden listings only**: the extra copies in each group plus listings hidden because an earlier page had them. Older suffixes are still recognised and stripped.
 - Interop calls must run on the main thread. `IAddonLifecycle` callbacks already do; anything triggered from elsewhere should use `IFramework.RunOnFrameworkThread`.
 
 ## 6. Counting duplicates across pages
@@ -146,6 +146,12 @@ Needed by #74 and #75: the hide decision is made per listing as it arrives, so t
 **Caveats for #74:**
 - 0x0484 isn't in FFXIVClientStructs, so a game patch could move it. #74 cross-checks it against the range text once each result set has finished, and logs a mismatch, so the patch-day CI and manual tests catch it. On any mismatch or out-of-range value, treat the set as page 1 (hide nothing extra).
 - Category changes weren't exercised in the round-3 session. They load page 1 per rounds 1 and 2, and the cross-check covers them.
+
+**As built (#75):**
+- `PageMemory` keeps, per page, the 30-character match keys of the listings the plugin left visible or hid as duplicates (not ones another plugin hid). A page-1 result set clears it; every result set replaces its own page's entry.
+- On page 2 and later, a listing whose key is on any earlier page is hidden, including the copy that would otherwise be kept, so no `[N]` appears for it. Empty descriptions are never hidden. Page 1 is never affected.
+- If the page index is unknown or no longer trusted (two cross-check mismatches), every set counts as page 1, which turns cross-page hiding off.
+- **Back-to-back small result sets (gap in #72, fixed here):** when two single-segment result sets arrive in a row (e.g. switching between two small categories), every listing of both sees the game's list empty, so the "list just emptied" signal never fired and they merged. `TitleUpdater` now notes each frame that the window has listings (`ResultSetBoundary.NoteGameListShown`); an empty list after that counts as a new transition.
 
 ---
 

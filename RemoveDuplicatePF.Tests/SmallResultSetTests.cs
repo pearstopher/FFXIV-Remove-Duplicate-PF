@@ -58,9 +58,36 @@ public class SmallResultSetTests
         this.FullPage(100);
         this.Segment(0, gameListEmpty: true, 900, 901);
 
-        // The game showed those 2, then emptied its list for the next request.
-        this.Segment(0, gameListEmpty: false, 902); // (an unlikely straggler while the list is shown)
+        // The window showed those 2 (noted each frame), then the game emptied its list for the
+        // next request. Every listing of both small sets sees an empty list.
+        this.boundary.NoteGameListShown();
         Assert.Equal(new[] { true, false, false }, this.Segment(0, gameListEmpty: true, 950, 951, 952));
+    }
+
+    [Fact]
+    public void Without_noting_the_shown_list_two_small_sets_would_merge()
+    {
+        // Documents why NoteGameListShown is needed (#75): no listing ever sees the list non-empty.
+        this.FullPage(100);
+        this.Segment(0, gameListEmpty: true, 900, 901);
+
+        // The second small set's first listing isn't recognised as a new set (the old overflow rule
+        // only splits later, at the wrong listing).
+        Assert.False(this.Segment(0, gameListEmpty: true, 950, 951, 952)[0]);
+    }
+
+    [Fact]
+    public void Noting_the_shown_list_mid_page_does_not_split_a_page_whose_first_segment_was_all_hidden()
+    {
+        // If segment 1 was entirely hidden, the window has nothing to show, so it's never noted:
+        // segment 2 still belongs to the same set.
+        var result = new List<bool>();
+        result.AddRange(this.Segment(1, gameListEmpty: true, 1, 2, 3, 4));
+        result.AddRange(this.Segment(2, gameListEmpty: true, 5, 6, 7, 8));
+        result.AddRange(this.Segment(0, gameListEmpty: false, 9));
+
+        Assert.True(result[0]);
+        Assert.All(result.Skip(1), Assert.False);
     }
 
     [Fact]
