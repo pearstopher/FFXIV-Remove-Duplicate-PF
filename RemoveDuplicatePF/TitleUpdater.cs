@@ -30,6 +30,11 @@ internal sealed unsafe class TitleUpdater : IDisposable
     private readonly Stopwatch sinceLastCheck = Stopwatch.StartNew();
     private bool loggedMissingTitle;
 
+    // The title node doesn't exist yet on the window's first frame, so only warn when it stays
+    // missing across this many checks in a row (about 5 seconds).
+    private const int MissingTitleChecksBeforeWarning = 20;
+    private int missingTitleChecks;
+
     public TitleUpdater(ListingFilter filter)
     {
         this.filter = filter;
@@ -84,10 +89,14 @@ internal sealed unsafe class TitleUpdater : IDisposable
             var shown = DisplayedListings.ResultSetOnScreen(this.filter);
             this.VerifyPage((AddonLookingForGroup*)addon, shown);
 
-            if (!SetTitle(addon, shown.HiddenTotal) && !this.loggedMissingTitle)
+            if (SetTitle(addon, shown.HiddenTotal))
+            {
+                this.missingTitleChecks = 0;
+            }
+            else if (++this.missingTitleChecks >= MissingTitleChecksBeforeWarning && !this.loggedMissingTitle)
             {
                 this.loggedMissingTitle = true;
-                Plugin.Log.Warning("Party Finder title text node not found; title count disabled");
+                Plugin.Log.Warning("Party Finder title text node not found; the title count can't be shown");
             }
         }
         catch (Exception ex)
@@ -106,7 +115,7 @@ internal sealed unsafe class TitleUpdater : IDisposable
             return;
 
         var rangeText = SeString.Parse(addon->CurrentPageTextNode->NodeText.AsSpan()).TextValue;
-        if (this.filter.Pages.Verify(shown.Page, rangeText))
+        if (this.filter.Pages.Verify(shown.Page, rangeText, DisplayedListings.DisplayedCount()))
         {
             Plugin.Log.Warning(
                 "Party Finder page index disagrees with the window (assigned page {Page}, window shows \"{Range}\"); counting every page as page 1 for this session",

@@ -51,6 +51,13 @@ internal static unsafe class DisplayedListings
         return agent != null && agent->NumberOfListingsDisplayed == 0;
     }
 
+    /// <summary>How many listings the window is showing, or <c>null</c> if unknown (#84).</summary>
+    public static int? DisplayedCount()
+    {
+        var agent = AgentLookingForGroup.Instance();
+        return agent == null ? null : agent->NumberOfListingsDisplayed;
+    }
+
     /// <summary>Whether the game's displayed listing list has listings right now (#75).</summary>
     public static bool GameListHasListings()
     {

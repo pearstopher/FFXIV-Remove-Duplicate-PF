@@ -175,6 +175,22 @@ Previous and Refresh on page 2 both move the page index from 1 to 0, so the inde
 
 Only Next and Previous are matched by number, so if a patch renumbers the buttons, the plugin falls back to treating every page 1 as a new search (the #75 behaviour) rather than keeping a stale memory. The `PF result set` line shows `(page 1, new search)` or `(page 1, same search)`.
 
+## 9. Pages overlap, and Previous can land early (#84)
+
+**Symptom (v1.2.0):** in Others, Previous from the last page gave short or blank pages, and sometimes no Next button.
+
+**Cause:** pages are positions in a list that keeps changing (parties are listed, filled and delisted), so pages can start a few listings earlier or later than on the last visit. In **filtered categories** such as Others, the game's own Previous from the last page lands about **10 listings early**: page 2 again started at listing 41 instead of 51, so it repeated the end of page 1. A comparison build that hid nothing confirmed this happens **without the plugin's hiding** (owner's walk-through, 2026-11-11 20:47). In the biggest category Previous lands exactly. Without the plugin the overlap goes unnoticed; cross-page hiding (#75) hid the repeated listings as "seen on an earlier page", leaving short or blank pages.
+
+**Memory evidence** (`InfoProxyCrossRealm`, read at each click and after each result set): `0x30` = listings on screen (after hiding), `0x34` (16-bit) = start of the previous page (`(page index − 1) × 50`, `0xFFFF` on page 1), `0x32` (16-bit) = a cursor into the server's list, about 52 per page in the biggest category and further apart in Others, `0xFFFF` after the last page. The plugin's hiding only changes `0x30`.
+
+**Fix:** a listing **left visible on an earlier page** and sent again on a later page is shown again and not counted as hidden. `PageMemory` keeps the shown IDs per page, cleared and replaced the same way as the match keys. Other listings with the same first 30 characters are still hidden. A listing hidden on the earlier page as a within-page duplicate stays hidden when repeated.
+
+**Also fixed in #84:**
+- The page check (#74) compared the page with the window's range text before the window had redrawn it (page 6 arrived while it still showed `201-238`). Two stale frames in a row switched cross-page hiding off for the session. A check is now skipped when the range text doesn't cover the number of listings on screen.
+- `Party Finder title text node not found` was logged as a warning every time the window opened, because the node doesn't exist on the first frame. It now warns only if the title stays missing for about 5 seconds.
+
+Wider handling of changing results is tracked in #85.
+
 ---
 
 ## Other notes for later issues

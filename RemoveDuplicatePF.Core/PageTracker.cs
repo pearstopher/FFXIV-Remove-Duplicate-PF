@@ -25,6 +25,23 @@ public static class PageRange
 
         return ((start - 1) / PageSize) + 1;
     }
+
+    /// <summary>
+    /// How many listings range text like <c>51-93</c> covers (43), or <c>null</c> if the text
+    /// isn't a range.
+    /// </summary>
+    public static int? CountOf(string? rangeText)
+    {
+        var match = Range.Match(rangeText ?? string.Empty);
+        if (!match.Success
+            || !int.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var start)
+            || !int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var end)
+            || start < 1
+            || end < start)
+            return null;
+
+        return end - start + 1;
+    }
 }
 
 /// <summary>
@@ -61,9 +78,17 @@ public sealed class PageTracker
     /// </summary>
     /// <param name="assignedPage">The page this tracker assigned to the result set on screen.</param>
     /// <param name="rangeText">The window's range text, e.g. <c>51-93</c>.</param>
-    public bool Verify(int assignedPage, string? rangeText)
+    /// <param name="displayedCount">
+    /// How many listings the window is showing. If the range text covers a different number, the
+    /// window hasn't redrawn it for these listings yet (it lags a frame behind), so the check is
+    /// skipped rather than counted as a mismatch (#84).
+    /// </param>
+    public bool Verify(int assignedPage, string? rangeText, int? displayedCount = null)
     {
         if (this.Unreliable || PageRange.PageOf(rangeText) is not { } shownPage)
+            return false;
+
+        if (displayedCount is { } shown && PageRange.CountOf(rangeText) != shown)
             return false;
 
         if (shownPage == assignedPage)

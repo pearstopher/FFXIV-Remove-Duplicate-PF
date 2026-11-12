@@ -102,9 +102,12 @@ public sealed class ListingFilter
             return false;
         }
 
-        // Earlier pages win: a listing already shown on an earlier page is hidden entirely,
-        // including the copy that would otherwise be kept here with an [N] (#75).
-        if (this.memory.SeenOnEarlierPage(set.Page, description))
+        // Earlier pages win: a listing whose text was already on an earlier page is hidden entirely,
+        // including the copy that would otherwise be kept here with an [N] (#75). Except the very same
+        // listing shown there: neighbouring pages overlap when results change or the game's Previous
+        // lands early, and the game would show it again, so it's shown and not counted (#84).
+        var repeat = this.memory.ShownOnEarlierPage(set.Page, listingId);
+        if (!repeat && this.memory.SeenOnEarlierPage(set.Page, description))
         {
             set.HiddenFromEarlierPages++;
             return false;
@@ -113,7 +116,10 @@ public sealed class ListingFilter
         this.memory.Record(set.Page, description);
         var visible = set.Tracker.Observe(listingId, description);
         if (visible)
+        {
             set.ShownIds.Add(listingId);
+            this.memory.RecordShown(set.Page, listingId);
+        }
 
         return visible;
     }
