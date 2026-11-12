@@ -168,7 +168,7 @@ public class DisplayedResultSetTests
     [InlineData(-1)]
     public void No_displayed_slots_fall_back_to_the_newest(int count)
     {
-        this.filter.Decide(1, 1, "A", true, gameListEmpty: true);
+        this.filter.Decide(1, 1, "A", true);
 
         var shown = this.filter.ForDisplayed(new ulong[] { 1, 2, 3 }, count);
 

@@ -64,11 +64,6 @@ internal sealed unsafe class TitleUpdater : IDisposable
 
     private void OnUpdate(AddonEvent type, AddonArgs args)
     {
-        // Every frame: note when the window has listings on screen, so two small result sets in a
-        // row are told apart (#75; see ResultSetBoundary.NoteGameListShown). A cheap field read.
-        if (DisplayedListings.GameListHasListings())
-            this.filter.NoteGameListShown();
-
         if (this.sinceLastCheck.Elapsed >= CheckInterval)
             this.Update(args);
     }

@@ -106,6 +106,7 @@ The count is for the **page currently shown**.
    - **Expected:** each time, the `PF result set` line says `(new search)` and the `[N]` go back to page 1's own counts.
 5. Switch back and forth between two categories that each have only a few listings.
    - **Expected:** each switch logs its own `PF result set` line with the right listing count; the two categories are never merged into one set.
+   - **If you can (#94):** go to a page where every listing is hidden (it looks empty and its `PF result set` line shows all of them as duplicates hidden), then switch to a category with 4 or fewer listings. **Expected:** that category gets its own `PF result set` line saying `(new search)`, and its listings aren't hidden because of the previous category.
 6. **Shifting pages (#84, #85):** in **Others** (a filtered category), go Next to the last page, then Previous back to page 1, twice. Do the same in the biggest category.
    - **Expected:** no page is blank or unexpectedly short, the range text (bottom right) matches what you'd see without the plugin, and Next is there whenever it would be without the plugin. Each ad shows once, with the same `[N]` wherever its shown copy appears.
 

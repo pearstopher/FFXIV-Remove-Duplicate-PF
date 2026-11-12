@@ -13,7 +13,8 @@ namespace RemoveDuplicatePF;
 /// <remarks>
 /// Everything it registers, and nothing else:
 /// <list type="bullet">
-/// <item>one <c>IPartyFinderGui.ReceiveListing</c> handler (<see cref="PartyFinderListener"/>);</item>
+/// <item>one <c>IPartyFinderGui.ReceiveListing</c> handler and one <c>IFramework.Update</c> handler
+/// (<see cref="PartyFinderListener"/>);</item>
 /// <item>three <c>IAddonLifecycle</c> listeners on <c>LookingForGroup</c> each in
 /// <see cref="ListingPrefixer"/> and <see cref="TitleUpdater"/>, and two (button clicks and
 /// window open, read only) in <see cref="SearchEvents"/>.</item>
