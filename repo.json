@@ -3,7 +3,7 @@
     "Author": "Ane Mora",
     "Name": "Remove Duplicate PF",
     "InternalName": "RemoveDuplicatePF",
-    "AssemblyVersion": "1.2.1.0",
+    "AssemblyVersion": "1.2.2.0",
     "Description": "This plugin removes duplicate Party Finder listings. Entries with duplicates are shown once and are marked with a count [n] representing the number of copies that were found. The total number of duplicate entries is shown in the title bar.\n\nThis plugin has no settings.",
     "Punchline": "Collapses duplicate Party Finder listings into one.",
     "ApplicableVersion": "any",
@@ -20,9 +20,9 @@
     "CanUnloadAsync": false,
     "LoadPriority": 0,
     "AcceptsFeedback": true,
-    "DownloadLinkInstall": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.2.1/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.2.1/latest.zip",
-    "DownloadLinkTesting": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.2.1/latest.zip",
-    "LastUpdate": 1794459767
+    "DownloadLinkInstall": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.2.2/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.2.2/latest.zip",
+    "DownloadLinkTesting": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/download/v1.2.2/latest.zip",
+    "LastUpdate": 1794502970
   }
 ]
