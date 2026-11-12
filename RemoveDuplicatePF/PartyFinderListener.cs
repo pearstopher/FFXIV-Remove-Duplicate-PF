@@ -36,7 +36,12 @@ internal sealed class PartyFinderListener : IDisposable
     {
         try
         {
-            args.Visible = this.filter.Decide(args.BatchNumber, listing.Id, listing.Description.TextValue, args.Visible);
+            args.Visible = this.filter.Decide(
+                args.BatchNumber,
+                listing.Id,
+                listing.Description.TextValue,
+                args.Visible,
+                DisplayedListings.GameListIsEmpty());
 
             // Batch 0 is the result set's final segment. Log one summary line a frame later,
             // after the whole segment is processed, instead of a line per listing (#11).

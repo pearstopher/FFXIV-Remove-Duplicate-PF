@@ -35,6 +35,17 @@ internal static unsafe class DisplayedListings
         return shown;
     }
 
+    /// <summary>
+    /// Whether the game's displayed listing list is empty right now. The game empties it whenever
+    /// it requests new results (page, refresh, category, opening the window), so a listing that
+    /// arrives while it's empty belongs to a new result set (#72). <c>false</c> if unknown.
+    /// </summary>
+    public static bool GameListIsEmpty()
+    {
+        var agent = AgentLookingForGroup.Instance();
+        return agent != null && agent->NumberOfListingsDisplayed == 0;
+    }
+
     // Listing IDs the window is showing, from AgentLookingForGroup (0 = empty slot).
     private static ulong[] ReadIds()
     {
