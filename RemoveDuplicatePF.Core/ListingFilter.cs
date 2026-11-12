@@ -47,6 +47,15 @@ public sealed class ListingFilter
     /// </summary>
     public void NoteGameListShown() => this.boundary.NoteGameListShown();
 
+    // Whether a page-1 result set is a new search or a return to page 1 (#80).
+    private readonly SearchStart searchStart = new();
+
+    /// <summary>Call when the Party Finder window opens (#80).</summary>
+    public void NoteWindowOpened() => this.searchStart.NoteWindowOpened();
+
+    /// <summary>Call for each button click in the Party Finder window, with its event number (#80).</summary>
+    public void NoteButtonClick(int eventParam) => this.searchStart.NoteButtonClick(eventParam);
+
     /// <summary>
     /// Returns the visibility to write back for a listing.
     /// </summary>
@@ -77,8 +86,9 @@ public sealed class ListingFilter
         if (this.boundary.IsNewResultSet(batchNumber, listingId, gameListEmpty))
         {
             var page = this.Pages.PageFor(gamePageIndex);
-            this.StartNewSet(page);
-            this.memory.StartPage(page); // page 1 clears what earlier searches showed
+            var newSearch = this.searchStart.TakeIsNewSearch() && page <= 1;
+            this.StartNewSet(page, newSearch);
+            this.memory.StartPage(page, newSearch); // a new search clears what earlier searches showed
         }
 
         var set = this.history.First!.Value;
@@ -149,23 +159,26 @@ public sealed class ListingFilter
         {
             var set = this.history.First!.Value;
             return new ResultSetSummary(
-                set.Number, set.Received, set.HiddenByOthers, set.Tracker, set.Page, set.HiddenFromEarlierPages);
+                set.Number, set.Received, set.HiddenByOthers, set.Tracker, set.Page, set.HiddenFromEarlierPages, set.NewSearch);
         }
     }
 
-    private void StartNewSet(int page = 1)
+    private void StartNewSet(int page = 1, bool newSearch = true)
     {
-        this.history.AddFirst(new ResultSet(this.nextSetNumber++, page));
+        this.history.AddFirst(new ResultSet(this.nextSetNumber++, page, newSearch));
         while (this.history.Count > HistorySize)
             this.history.RemoveLast();
     }
 
-    private sealed class ResultSet(int number, int page)
+    private sealed class ResultSet(int number, int page, bool newSearch)
     {
         public int Number { get; } = number;
 
         // One-based page this result set belongs to (#74).
         public int Page { get; } = page;
+
+        // Whether it started a new search (only ever true on page 1) (#80).
+        public bool NewSearch { get; } = newSearch;
 
         public DuplicateTracker Tracker { get; } = new();
 

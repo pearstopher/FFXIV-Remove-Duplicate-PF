@@ -148,10 +148,32 @@ Needed by #74 and #75: the hide decision is made per listing as it arrives, so t
 - Category changes weren't exercised in the round-3 session. They load page 1 per rounds 1 and 2, and the cross-check covers them.
 
 **As built (#75):**
-- `PageMemory` keeps, per page, the 30-character match keys of the listings the plugin left visible or hid as duplicates (not ones another plugin hid). A page-1 result set clears it; every result set replaces its own page's entry.
+- `PageMemory` keeps, per page, the 30-character match keys of the listings the plugin left visible or hid as duplicates (not ones another plugin hid). A new search's page 1 clears it (#80; was any page 1 in #75); every result set replaces its own page's entry.
 - On page 2 and later, a listing whose key is on any earlier page is hidden, including the copy that would otherwise be kept, so no `[N]` appears for it. Empty descriptions are never hidden. Page 1 is never affected.
 - If the page index is unknown or no longer trusted (two cross-check mismatches), every set counts as page 1, which turns cross-page hiding off.
 - **Back-to-back small result sets (gap in #72, fixed here):** when two single-segment result sets arrive in a row (e.g. switching between two small categories), every listing of both sees the game's list empty, so the "list just emptied" signal never fired and they merged. `TitleUpdater` now notes each frame that the window has listings (`ResultSetBoundary.NoteGameListShown`); an empty list after that counts as a new transition.
+
+## 8. New search or back to page 1 (#80)
+
+Previous and Refresh on page 2 both move the page index from 1 to 0, so the index can't tell them apart. The window's own events can.
+
+**Evidence (owner's walk-through, 2026-11-11 20:09):** `IAddonLifecycle` `PreReceiveEvent` on `LookingForGroup` logged one `ButtonClick` per action, 80-130 ms before the first listing of the result set it requested:
+
+| Action | `ButtonClick` event param | Page index after |
+| --- | --- | --- |
+| Open window | none (`PostSetup` fires ~0.2 s before the first listing) | 0 |
+| Next | 9 | +1 |
+| Previous | 10 | −1 |
+| Refresh | 6 | 0 |
+| Category tabs | one number per tab (22 and 33 seen) | 0 |
+
+**As built:** `SearchEvents` passes clicks and window opens to `SearchStart`, which judges each result set from what happened since the previous one started:
+- the window opened → new search;
+- last click Next or Previous → same search;
+- last click anything else (Refresh, a tab, ...) → new search;
+- no click → same search (a background re-fetch, #51), but only if clicks have been seen since the window opened; otherwise new search, in case clicks aren't reaching the plugin.
+
+Only Next and Previous are matched by number, so if a patch renumbers the buttons, the plugin falls back to treating every page 1 as a new search (the #75 behaviour) rather than keeping a stale memory. The `PF result set` line shows `(page 1, new search)` or `(page 1, same search)`.
 
 ---
 

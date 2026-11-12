@@ -13,7 +13,7 @@ There are no settings: install it, enable it, and open Party Finder.
 
 - **Combines duplicate listings.** Listings whose descriptions start with the same 30 characters count as duplicates. Only one stays visible: the first one in the order the game shows them.
 - **Marks the one that stays** with a coloured **`[N]`** in front of its description, where N is the number of copies. For example, three copies of a venue ad become one listing showing **`[3]`** `Come to my venue tonight…`.
-- **Hides listings you've already seen on an earlier page.** On page 2 and later, a listing that matches one from an earlier page is hidden, including every copy of it. Page 1 always shows everything, and going back to page 1 (or starting a new search) starts over.
+- **Hides listings you've already seen on an earlier page.** On page 2 and later, a listing that matches one from an earlier page is hidden, including every copy of it. Page 1 always shows everything. Opening the window, pressing Refresh or changing category starts a new search and starts over; going back with Previous doesn't.
 - **Shows how many listings are hidden in the window title** in the same colour, for example **`Party Finder (7 duplicates hidden)`**, for the page you're looking at. It counts only hidden listings: the extra copies behind each `[N]` plus listings hidden because an earlier page had them. So `[3]` and `[2]` on page 2, plus 4 listings already seen on page 1, make 2 + 1 + 4 = 7.
 - **Leaves listings with an empty description alone.** They're never combined or hidden.
 

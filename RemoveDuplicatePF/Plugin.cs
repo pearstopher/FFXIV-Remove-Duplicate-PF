@@ -15,7 +15,8 @@ namespace RemoveDuplicatePF;
 /// <list type="bullet">
 /// <item>one <c>IPartyFinderGui.ReceiveListing</c> handler (<see cref="PartyFinderListener"/>);</item>
 /// <item>three <c>IAddonLifecycle</c> listeners on <c>LookingForGroup</c> each in
-/// <see cref="ListingPrefixer"/> and <see cref="TitleUpdater"/>.</item>
+/// <see cref="ListingPrefixer"/> and <see cref="TitleUpdater"/>, and two (button clicks and
+/// window open, read only) in <see cref="SearchEvents"/>.</item>
 /// </list>
 /// No hooks, slash commands, windows, or config/main UI callbacks. All of it is
 /// released in <see cref="Dispose"/>, which also restores the window's text (#11).
@@ -38,6 +39,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly PartyFinderListener listener;
     private readonly ListingPrefixer prefixer;
     private readonly TitleUpdater titleUpdater;
+    private readonly SearchEvents searchEvents;
 
     public Plugin()
     {
@@ -45,6 +47,7 @@ public sealed class Plugin : IDalamudPlugin
         this.listener = new PartyFinderListener(filter);
         this.prefixer = new ListingPrefixer(filter);
         this.titleUpdater = new TitleUpdater(filter);
+        this.searchEvents = new SearchEvents(filter);
 
         // Logs which build is running, so a stale or wrong-configuration build is obvious in /xllog.
         var dll = PluginInterface.AssemblyLocation;
@@ -59,6 +62,7 @@ public sealed class Plugin : IDalamudPlugin
         DisposeSafely(this.listener, "Party Finder listener");
         DisposeSafely(this.prefixer, "listing prefixes");
         DisposeSafely(this.titleUpdater, "window title");
+        DisposeSafely(this.searchEvents, "button listener");
         Log.Information($"{PluginInterface.Manifest.Name} unloaded");
     }
 

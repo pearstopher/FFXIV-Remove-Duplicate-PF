@@ -99,9 +99,11 @@ The count is for the **page currently shown**.
    - **Expected:** none of page 1's listings (by their first 30 characters) appear on page 2, not even as a `[N]` group. The `PF result set #… (page 2)` line shows "E hidden from earlier pages".
 2. Go on to page 3.
    - **Expected:** nothing from pages 1 or 2 appears.
-3. Go back to page 1 with Previous, or press Refresh.
-   - **Expected:** page 1 shows everything as normal ("0 hidden from earlier pages"). Going forward again hides only what the current page 1 has.
-4. Switch back and forth between two categories that each have only a few listings.
+3. Go back to page 1 with Previous.
+   - **Expected:** page 1 shows everything as normal ("0 hidden from earlier pages"), and its `PF result set` line says `(page 1, same search)` (#80). Next to page 2 and 3 again: page 3 still hides what page 2 showed.
+4. On page 2 or 3, press Refresh. Then do the same with a category tab, and by closing and reopening the window.
+   - **Expected:** each time, the `PF result set` line says `(page 1, new search)`, and going forward hides only what the new page 1 has.
+5. Switch back and forth between two categories that each have only a few listings.
    - **Expected:** each switch logs its own `PF result set` line with the right listing count; the two categories are never merged into one set.
 
 ## Other Party Finder plugins (#28)

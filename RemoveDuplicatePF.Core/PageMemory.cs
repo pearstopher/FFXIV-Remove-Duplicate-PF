@@ -8,8 +8,8 @@ namespace RemoveDuplicatePF.Core;
 /// Owner's rules:
 /// <list type="bullet">
 /// <item>Earlier pages win: on page P, a key seen on any page before P is hidden.</item>
-/// <item>Searches always start on page 1, so starting page 1 clears everything. Being on a
-/// later page means the earlier pages were seen recently.</item>
+/// <item>A new search (window opened, Refresh, category change) starts on page 1 and clears
+/// everything. Going back to page 1 with Previous keeps the other pages (#80).</item>
 /// <item>Each visit to a page replaces that page's entry (results can change between visits).</item>
 /// </list>
 /// </remarks>
@@ -18,9 +18,11 @@ public sealed class PageMemory
     private readonly Dictionary<int, HashSet<string>> keysByPage = new();
 
     /// <summary>Call when a result set for <paramref name="page"/> (one-based) starts arriving.</summary>
-    public void StartPage(int page)
+    /// <param name="page">The one-based page.</param>
+    /// <param name="newSearch">Whether a page-1 result set starts a new search (<see cref="SearchStart"/>).</param>
+    public void StartPage(int page, bool newSearch = true)
     {
-        if (page <= 1)
+        if (page <= 1 && newSearch)
             this.keysByPage.Clear();
 
         this.keysByPage[page] = new HashSet<string>(StringComparer.Ordinal);
