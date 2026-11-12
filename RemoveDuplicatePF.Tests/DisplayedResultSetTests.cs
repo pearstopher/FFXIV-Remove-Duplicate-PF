@@ -10,22 +10,11 @@ public class DisplayedResultSetTests
 {
     private readonly ListingFilter filter = new();
 
-    // Feeds a result set as segments of up to 4 listings: 1, 2, ..., then a final segment 0.
-    private List<ulong> Feed(params (ulong Id, string Text)[] listings)
+    // Feeds one page the way the game sends it and returns the IDs it left visible.
+    private List<ulong> Feed(params (ulong Id, string? Text)[] listings)
     {
-        var shown = new List<ulong>();
-        var segments = listings.Chunk(ResultSetBoundary.MaxListingsPerSegment).ToArray();
-        for (var s = 0; s < segments.Length; s++)
-        {
-            var batch = s == segments.Length - 1 ? 0 : s + 1;
-            foreach (var (id, text) in segments[s])
-            {
-                if (this.filter.Decide(batch, id, text, currentlyVisible: true))
-                    shown.Add(id);
-            }
-        }
-
-        return shown;
+        var visible = GameFeed.Page(this.filter, listings);
+        return listings.Where((_, i) => visible[i]).Select(l => l.Id).ToList();
     }
 
     // Shape of the owner's 13:34:52 page 1: five pairs among other listings.
@@ -127,7 +116,7 @@ public class DisplayedResultSetTests
         for (var page = 0; page < ListingFilter.HistorySize; page++)
         {
             var listings = Enumerable.Range(0, 5)
-                .Select(i => ((ulong)(1000 + (page * 10) + i), $"Filler {page}-{i}"))
+                .Select(i => ((ulong)(1000 + (page * 10) + i), (string?)$"Filler {page}-{i}"))
                 .ToArray();
             this.Feed(listings);
         }
@@ -136,6 +125,15 @@ public class DisplayedResultSetTests
         var shown = this.filter.ForDisplayed(oldest);
         Assert.True(shown.IsNewest);
         Assert.Equal(0, shown.MatchedListings);
+    }
+
+    [Fact]
+    public void Prefixes_are_built_once_when_first_read()
+    {
+        var page2 = this.OpenAndGoToPage2();
+        var shown = this.filter.ForDisplayed(page2);
+
+        Assert.Same(shown.Prefixes, shown.Prefixes);
     }
 
     [Fact]
@@ -153,8 +151,8 @@ public class DisplayedResultSetTests
         // Owner's 19:40:31 walk-through: page 3 had 50 listings, page 4 only 18. The game's 50
         // displayed-listing slots kept page 3's IDs after the first 18, which outnumbered page 4's
         // and made page 3 look like it was on screen (#74).
-        var page3 = Enumerable.Range(300, 50).Select(i => ((ulong)i, $"Listing {i}")).ToArray();
-        var page4 = Enumerable.Range(400, 18).Select(i => ((ulong)i, $"Listing {i}")).ToArray();
+        var page3 = Enumerable.Range(300, 50).Select(i => ((ulong)i, (string?)$"Listing {i}")).ToArray();
+        var page4 = Enumerable.Range(400, 18).Select(i => ((ulong)i, (string?)$"Listing {i}")).ToArray();
         this.Feed(page3);
         this.Feed(page4);
 

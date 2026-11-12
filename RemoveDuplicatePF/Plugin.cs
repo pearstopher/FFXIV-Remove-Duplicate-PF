@@ -30,6 +30,13 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
+    /// <summary>
+    /// Whether Debug messages are recorded (the <c>/xllog</c> level is Debug or lower). Dalamud's
+    /// global logger applies that level, so text built only for the Debug log can be skipped when
+    /// this is false.
+    /// </summary>
+    internal static bool DebugLogging => Serilog.Log.IsEnabled(Serilog.Events.LogEventLevel.Debug);
+
 #if DEBUG
     private const string BuildConfiguration = "Debug";
 #else

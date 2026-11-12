@@ -7,14 +7,11 @@ public class DuplicateTrackerTests
     private readonly DuplicateTracker tracker = new();
 
     [Fact]
-    public void Single_listing_is_shown_and_not_counted()
+    public void Single_listing_is_shown_with_a_group_of_one()
     {
         Assert.True(this.tracker.Observe(1, "Come to my venue"));
 
         Assert.Equal(1, this.tracker.GroupSize(1));
-        Assert.Equal(0, this.tracker.HiddenCount);
-        Assert.Equal(0, this.tracker.DuplicateGroupCount);
-        Assert.Empty(this.tracker.DuplicateGroups);
     }
 
     [Fact]
@@ -25,8 +22,8 @@ public class DuplicateTrackerTests
         Assert.False(this.tracker.Observe(3, "Come to my venue"));
 
         Assert.Equal(3, this.tracker.GroupSize(1));
-        Assert.Equal(2, this.tracker.HiddenCount);
-        Assert.Equal(1, this.tracker.DuplicateGroupCount);
+        Assert.Equal(0, this.tracker.GroupSize(2));
+        Assert.Equal(0, this.tracker.GroupSize(3));
     }
 
     [Fact]
@@ -57,9 +54,6 @@ public class DuplicateTrackerTests
         Assert.Equal(3, this.tracker.GroupSize(1));
         Assert.Equal(2, this.tracker.GroupSize(2));
         Assert.Equal(1, this.tracker.GroupSize(4));
-        Assert.Equal(3, this.tracker.HiddenCount);
-        Assert.Equal(2, this.tracker.DuplicateGroupCount);
-        Assert.Equal(new Dictionary<ulong, int> { [1] = 3, [2] = 2 }, this.tracker.DuplicateGroups);
     }
 
     [Theory]
@@ -72,7 +66,8 @@ public class DuplicateTrackerTests
         Assert.True(this.tracker.Observe(1, first));
         Assert.True(this.tracker.Observe(2, second));
 
-        Assert.Equal(0, this.tracker.HiddenCount);
+        Assert.Equal(1, this.tracker.GroupSize(1));
+        Assert.Equal(1, this.tracker.GroupSize(2));
     }
 
     [Theory]
@@ -87,8 +82,7 @@ public class DuplicateTrackerTests
         Assert.True(this.tracker.Observe(3, description));
 
         Assert.Equal(0, this.tracker.GroupSize(1));
-        Assert.Equal(0, this.tracker.HiddenCount);
-        Assert.Equal(0, this.tracker.DuplicateGroupCount);
+        Assert.Equal(0, this.tracker.GroupSize(2));
     }
 
     [Fact]
@@ -100,21 +94,6 @@ public class DuplicateTrackerTests
         Assert.True(this.tracker.Observe(1, "Venue"));
         Assert.False(this.tracker.Observe(2, "Venue"));
         Assert.Equal(2, this.tracker.GroupSize(1));
-        Assert.Equal(1, this.tracker.HiddenCount);
-    }
-
-    [Fact]
-    public void Duplicate_groups_by_description_lists_only_groups_with_duplicates()
-    {
-        this.tracker.Observe(1, "A");
-        this.tracker.Observe(2, "A");
-        this.tracker.Observe(3, "B");
-        this.tracker.Observe(4, "");
-
-        Assert.Equal(new Dictionary<string, int> { ["A"] = 2 }, this.tracker.DuplicateGroupsByDescription);
-
-        this.tracker.Reset();
-        Assert.Empty(this.tracker.DuplicateGroupsByDescription);
     }
 
     [Fact]
@@ -131,10 +110,7 @@ public class DuplicateTrackerTests
 
         this.tracker.Reset();
 
-        Assert.Equal(0, this.tracker.HiddenCount);
-        Assert.Equal(0, this.tracker.DuplicateGroupCount);
         Assert.Equal(0, this.tracker.GroupSize(1));
-        Assert.Empty(this.tracker.DuplicateGroups);
 
         // After a reset the same listings start fresh: the old duplicate is now first.
         Assert.True(this.tracker.Observe(2, "Venue"));

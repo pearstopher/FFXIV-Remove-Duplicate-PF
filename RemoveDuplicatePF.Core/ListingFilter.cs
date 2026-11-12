@@ -143,8 +143,9 @@ public sealed class ListingFilter
             }
         }
 
+        var chosen = best;
         return new DisplayedResultSet(
-            best.Number, best == this.history.First!.Value, bestOverlap, best.Hidden, this.Prefixes(best));
+            best.Number, best == this.history.First!.Value, bestOverlap, best.Hidden, () => this.Prefixes(chosen));
     }
 
     /// <summary>Sequence number of the newest result set (cheap; for use per listing).</summary>
@@ -204,20 +205,38 @@ public sealed class ListingFilter
 }
 
 /// <summary>The result set chosen to describe what's on screen.</summary>
-/// <param name="ResultSetNumber">Sequence number of the result set since load (1 = first page received), for the debug log.</param>
-/// <param name="IsNewest">Whether it's the most recently received result set.</param>
-/// <param name="MatchedListings">How many displayed listings it matched.</param>
-/// <param name="HiddenTotal">
-/// Listings hidden on this page as copies of a listing shown earlier in the search. The number in the
-/// title. The shown copy of each ad isn't counted.
-/// </param>
-/// <param name="Prefixes">
-/// The <c>[N]</c> for each shown listing that has copies, by full description: every copy found so
-/// far this search (#88).
-/// </param>
-public sealed record DisplayedResultSet(
-    int ResultSetNumber,
-    bool IsNewest,
-    int MatchedListings,
-    int HiddenTotal,
-    IReadOnlyDictionary<string, int> Prefixes);
+/// <param name="resultSetNumber">Sequence number of the result set since load (1 = first page received), for the debug log.</param>
+/// <param name="isNewest">Whether it's the most recently received result set.</param>
+/// <param name="matchedListings">How many displayed listings it matched.</param>
+/// <param name="hiddenTotal">Listings hidden on the page (see <see cref="HiddenTotal"/>).</param>
+/// <param name="prefixes">Builds <see cref="Prefixes"/> the first time it's read.</param>
+public sealed class DisplayedResultSet(
+    int resultSetNumber,
+    bool isNewest,
+    int matchedListings,
+    int hiddenTotal,
+    Func<IReadOnlyDictionary<string, int>> prefixes)
+{
+    private IReadOnlyDictionary<string, int>? builtPrefixes;
+
+    /// <summary>Sequence number of the result set since load (1 = first page received), for the debug log.</summary>
+    public int ResultSetNumber { get; } = resultSetNumber;
+
+    /// <summary>Whether it's the most recently received result set.</summary>
+    public bool IsNewest { get; } = isNewest;
+
+    /// <summary>How many displayed listings it matched.</summary>
+    public int MatchedListings { get; } = matchedListings;
+
+    /// <summary>
+    /// Listings hidden on this page as copies of a listing shown earlier in the search. The number in
+    /// the title. The shown copy of each ad isn't counted.
+    /// </summary>
+    public int HiddenTotal { get; } = hiddenTotal;
+
+    /// <summary>
+    /// The <c>[N]</c> for each shown listing that has copies, by full description: every copy found so
+    /// far this search (#88). Built only when read, because the title doesn't need it.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> Prefixes => this.builtPrefixes ??= prefixes();
+}

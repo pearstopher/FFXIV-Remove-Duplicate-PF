@@ -15,26 +15,14 @@ namespace RemoveDuplicatePF.Core;
 /// </remarks>
 public sealed class DuplicateTracker
 {
-    // match key -> the kept (first) listing in that group
-    private readonly Dictionary<string, (ulong Id, string Description)> keptByKey = new(StringComparer.Ordinal);
+    // match key -> ID of the kept (first) listing in that group
+    private readonly Dictionary<string, ulong> keptIdByKey = new(StringComparer.Ordinal);
 
     // kept listing ID -> number of listings in its group (including itself)
     private readonly Dictionary<ulong, int> groupSizeByKeptId = new();
 
     // every listing ID seen since the last reset -> whether it was shown
     private readonly Dictionary<ulong, bool> visibilityById = new();
-
-    /// <summary>Total number of listings hidden as duplicates since the last reset.</summary>
-    public int HiddenCount { get; private set; }
-
-    /// <summary>Number of groups that have at least one hidden duplicate.</summary>
-    public int DuplicateGroupCount => this.groupSizeByKeptId.Count(g => g.Value > 1);
-
-    /// <summary>
-    /// Total listings in duplicate groups, including the one kept in each group. This equals
-    /// the sum of the <c>[N]</c> prefixes, and is the number shown in the window title (#64).
-    /// </summary>
-    public int DuplicateListingCount => this.groupSizeByKeptId.Values.Where(size => size > 1).Sum();
 
     /// <summary>
     /// Records a listing and returns whether it should be shown.
@@ -54,15 +42,14 @@ public sealed class DuplicateTracker
         else
         {
             var key = DescriptionMatch.Key(description);
-            if (this.keptByKey.TryGetValue(key, out var kept))
+            if (this.keptIdByKey.TryGetValue(key, out var keptId))
             {
-                this.groupSizeByKeptId[kept.Id]++;
-                this.HiddenCount++;
+                this.groupSizeByKeptId[keptId]++;
                 visible = false;
             }
             else
             {
-                this.keptByKey[key] = (listingId, description);
+                this.keptIdByKey[key] = listingId;
                 this.groupSizeByKeptId[listingId] = 1;
                 visible = true;
             }
@@ -80,26 +67,11 @@ public sealed class DuplicateTracker
     public int GroupSize(ulong listingId) =>
         this.groupSizeByKeptId.TryGetValue(listingId, out var size) ? size : 0;
 
-    /// <summary>Kept listings that have duplicates, with their group sizes.</summary>
-    public IReadOnlyDictionary<ulong, int> DuplicateGroups =>
-        this.groupSizeByKeptId.Where(g => g.Value > 1).ToDictionary(g => g.Key, g => g.Value);
-
-    /// <summary>
-    /// Full descriptions of the kept listings of groups that have duplicates,
-    /// with their group sizes. This is the text shown on screen for each group (#9).
-    /// </summary>
-    public IReadOnlyDictionary<string, int> DuplicateGroupsByDescription =>
-        this.keptByKey.Values
-            .Select(k => (k.Description, Size: this.groupSizeByKeptId[k.Id]))
-            .Where(g => g.Size > 1)
-            .ToDictionary(g => g.Description, g => g.Size, StringComparer.Ordinal);
-
-    /// <summary>Clears all state, ready for a new result set.</summary>
+    /// <summary>Clears all state, ready for a new search.</summary>
     public void Reset()
     {
-        this.keptByKey.Clear();
+        this.keptIdByKey.Clear();
         this.groupSizeByKeptId.Clear();
         this.visibilityById.Clear();
-        this.HiddenCount = 0;
     }
 }
