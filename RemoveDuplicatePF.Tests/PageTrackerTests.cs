@@ -121,6 +121,53 @@ public class PageTrackerTests
     }
 
     [Fact]
+    public void Short_last_page_is_found_despite_stale_slots_from_the_previous_page()
+    {
+        // Owner's 19:40:31 walk-through: page 3 had 50 listings, page 4 only 18. The game's 50
+        // displayed-listing slots kept page 3's IDs after the first 18, which outnumbered page 4's
+        // and made page 3 look like it was on screen.
+        var filter = new ListingFilter();
+        var page3 = Enumerable.Range(300, 50).Select(i => (ulong)i).ToArray();
+        var page4 = Enumerable.Range(400, 18).Select(i => (ulong)i).ToArray();
+
+        FeedPage(filter, page3, gamePageIndex: 2);
+        FeedPage(filter, page4, gamePageIndex: 3);
+
+        var slots = page4.Concat(page3.Skip(18)).ToArray(); // 18 new IDs, then 32 stale ones
+
+        Assert.Equal(3, filter.ForDisplayed(slots).Page);                // reading all 50 slots: wrong page
+        Assert.Equal(4, filter.ForDisplayed(slots, displayedCount: 18).Page); // only the shown slots: right
+        Assert.Equal(18, filter.ForDisplayed(slots, displayedCount: 18).MatchedListings);
+    }
+
+    // Feeds a page the way the game sends it: segments of 4 numbered 1, 2, ..., with the last
+    // one numbered 0. The game's list is empty only while the first segment is processed.
+    private static void FeedPage(ListingFilter filter, ulong[] ids, int gamePageIndex)
+    {
+        var segments = ids.Chunk(ResultSetBoundary.MaxListingsPerSegment).ToArray();
+        for (var s = 0; s < segments.Length; s++)
+        {
+            var batch = s == segments.Length - 1 ? 0 : s + 1;
+            foreach (var id in segments[s])
+                filter.Decide(batch, id, $"Listing {id}", true, gameListEmpty: s == 0, gamePageIndex: gamePageIndex);
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void No_displayed_slots_fall_back_to_the_newest(int count)
+    {
+        var filter = new ListingFilter();
+        filter.Decide(1, 1, "A", true, gameListEmpty: true, gamePageIndex: 0);
+
+        var shown = filter.ForDisplayed(new ulong[] { 1, 2, 3 }, count);
+
+        Assert.True(shown.IsNewest);
+        Assert.Equal(0, shown.MatchedListings);
+    }
+
+    [Fact]
     public void Displayed_result_set_reports_its_page()
     {
         var filter = new ListingFilter();

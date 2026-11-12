@@ -85,6 +85,14 @@ public sealed class ListingFilter
     }
 
     /// <summary>
+    /// <see cref="ForDisplayed(IEnumerable{ulong})"/> for the game's raw 50 displayed-listing slots.
+    /// Only the first <paramref name="displayedCount"/> slots are the page on screen: the game doesn't
+    /// clear the rest, so on a short page they still hold the previous page's IDs (#74).
+    /// </summary>
+    public DisplayedResultSet ForDisplayed(IEnumerable<ulong> displayedListingSlots, int displayedCount) =>
+        this.ForDisplayed(displayedListingSlots.Take(Math.Max(0, displayedCount)));
+
+    /// <summary>
     /// The result set whose shown listings best match <paramref name="displayedListingIds"/>
     /// (the listings the Party Finder window is showing). Ties go to the newest set; with
     /// no overlap at all (or no displayed IDs), the newest set is used.

@@ -18,7 +18,12 @@ internal static unsafe class DisplayedListings
     /// </summary>
     public static DisplayedResultSet ResultSetOnScreen(ListingFilter filter)
     {
-        var shown = filter.ForDisplayed(ReadIds());
+        // Only the first NumberOfListingsDisplayed slots are on screen; the rest can still hold
+        // the previous page's IDs (#74).
+        var agent = AgentLookingForGroup.Instance();
+        var shown = agent == null
+            ? filter.ForDisplayed(Array.Empty<ulong>())
+            : filter.ForDisplayed(agent->Listings.ListingIds.ToArray(), agent->NumberOfListingsDisplayed);
 
         // Debug log when the result set in use changes, so mismatches can be traced in dalamud.log.
         if (shown.ResultSetNumber != lastLoggedSetNumber)
@@ -63,12 +68,5 @@ internal static unsafe class DisplayedListings
             return null;
 
         return ((byte*)agent->InfoProxyCrossRealm)[PageIndexOffset];
-    }
-
-    // Listing IDs the window is showing, from AgentLookingForGroup (0 = empty slot).
-    private static ulong[] ReadIds()
-    {
-        var agent = AgentLookingForGroup.Instance();
-        return agent == null ? Array.Empty<ulong>() : agent->Listings.ListingIds.ToArray();
     }
 }
