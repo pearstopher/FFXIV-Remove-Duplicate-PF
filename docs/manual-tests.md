@@ -51,6 +51,9 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
    - **Expected:** one new line each time, with a higher `#` number, and counts for that page only.
 7. **Small categories (#72):** switch to a category with **4 or fewer** listings (they arrive as one small batch).
    - **Expected:** a new `PF result set #…` line for it, with only that category's listings counted. Nothing in it is hidden because of the previous category, and the title doesn't show the previous page's count.
+8. **Page numbers (#74):** with Debug+ logging, on a category with several pages go **Next** to the last page, **Previous** back to page 1, **Next** once, **Refresh**, then **change category**.
+   - **Expected:** each `PF result set #… (page P)` line has the page the window shows at the bottom right (`1-42` is page 1, `51-93` page 2, `101-…` page 3). After Refresh and the category change it says `page 1`.
+   - **Expected:** no `Party Finder page index disagrees with the window` warning. If it appears, the game's page index has probably moved after a patch: report it (every page then counts as page 1 until the plugin is updated).
 
 ## Coloured [N] prefix (#9)
 

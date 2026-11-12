@@ -18,7 +18,12 @@ internal static unsafe class DisplayedListings
     /// </summary>
     public static DisplayedResultSet ResultSetOnScreen(ListingFilter filter)
     {
-        var shown = filter.ForDisplayed(ReadIds());
+        // Only the first NumberOfListingsDisplayed slots are on screen; the rest can still hold
+        // the previous page's IDs (#74).
+        var agent = AgentLookingForGroup.Instance();
+        var shown = agent == null
+            ? filter.ForDisplayed(Array.Empty<ulong>())
+            : filter.ForDisplayed(agent->Listings.ListingIds.ToArray(), agent->NumberOfListingsDisplayed);
 
         // Debug log when the result set in use changes, so mismatches can be traced in dalamud.log.
         if (shown.ResultSetNumber != lastLoggedSetNumber)
@@ -46,10 +51,22 @@ internal static unsafe class DisplayedListings
         return agent != null && agent->NumberOfListingsDisplayed == 0;
     }
 
-    // Listing IDs the window is showing, from AgentLookingForGroup (0 = empty slot).
-    private static ulong[] ReadIds()
+    /// <summary>
+    /// Offset of the zero-based Party Finder page index in <c>InfoProxyCrossRealm</c> (#73).
+    /// Not in FFXIVClientStructs, so <see cref="PageTracker.Verify"/> checks it against the window.
+    /// </summary>
+    private const int PageIndexOffset = 0x0484;
+
+    /// <summary>
+    /// The game's zero-based page index for the results being requested or received, or
+    /// <c>null</c> if it can't be read. Already correct when a result set's first listing arrives (#73).
+    /// </summary>
+    public static int? GamePageIndex()
     {
         var agent = AgentLookingForGroup.Instance();
-        return agent == null ? Array.Empty<ulong>() : agent->Listings.ListingIds.ToArray();
+        if (agent == null || agent->InfoProxyCrossRealm == null)
+            return null;
+
+        return ((byte*)agent->InfoProxyCrossRealm)[PageIndexOffset];
     }
 }

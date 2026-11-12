@@ -169,6 +169,7 @@ When the game or Dalamud updates:
    2. Fix any build errors, run `dotnet test`, and run the manual tests in game (`docs/manual-tests.md`).
    3. Release a new version (section 8), for example `v1.0.1`. The release workflow puts the new `DalamudApiLevel` into `repo.json` automatically, and players get the update from the custom repo.
 4. **If only game structs changed** (the build passes but something misbehaves in game), check `/xllog` for `Party Finder title text node not found` or other errors. The title and prefix code (`TitleUpdater`, `ListingPrefixer`) is what depends on the game's UI layout.
+5. **Check the page index** (#74). The page number comes from an undocumented byte (`InfoProxyCrossRealm` + 0x0484, `DisplayedListings.PageIndexOffset`), which a patch can move. Run manual test #8 step 8. A `Party Finder page index disagrees with the window` warning means it moved: every page then counts as page 1 (safe, but nothing is hidden because of earlier pages). Find the new offset with the round-3 diagnostic on the `issue-71-page-research` branch (see `docs/party-finder-notes.md` section 7).
 
 ## Troubleshooting
 
