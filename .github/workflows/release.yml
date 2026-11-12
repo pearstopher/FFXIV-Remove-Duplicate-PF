@@ -61,3 +61,9 @@ jobs:
           git add repo.json
           git commit -m "Update repo.json for $env:GITHUB_REF_NAME [skip ci]"
           git push origin main
+
+      # Tell the combined plugin repo to rebuild its list now that repo.json is pushed.
+      - name: Notify ffxiv-plugins
+        env:
+          GH_TOKEN: ${{ secrets.PLUGIN_REPO_TOKEN }}
+        run: gh api repos/pearstopher/ffxiv-plugins/dispatches -f event_type=plugin-updated
