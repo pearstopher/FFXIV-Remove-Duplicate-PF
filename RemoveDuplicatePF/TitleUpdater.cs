@@ -10,10 +10,10 @@ using RemoveDuplicatePF.Core;
 namespace RemoveDuplicatePF;
 
 /// <summary>
-/// Shows the total number of duplicate listings in the Party Finder window title,
-/// e.g. <c>Party Finder (7 duplicates)</c> with the count in the <c>[N]</c> prefix colour,
-/// and restores the game's title on unload. The total equals the sum of the <c>[N]</c>
-/// prefixes on the page (#64).
+/// Shows the number of hidden listings in the Party Finder window title,
+/// e.g. <c>Party Finder (7 duplicates hidden)</c> with the count in the <c>[N]</c> prefix colour,
+/// and restores the game's title on unload. It counts extra copies within the page plus
+/// listings already seen on an earlier page; the visible copy of each group isn't counted (#75).
 /// </summary>
 /// <remarks>
 /// The title is the window component's title text node (<c>AtkComponentWindow</c>,
@@ -48,7 +48,7 @@ internal sealed unsafe class TitleUpdater : IDisposable
         {
             var addon = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(AddonName).Address;
             if (addon != null)
-                SetTitle(addon, total: null);
+                SetTitle(addon, hidden: null);
         }
         catch (Exception ex)
         {
@@ -60,6 +60,11 @@ internal sealed unsafe class TitleUpdater : IDisposable
 
     private void OnUpdate(AddonEvent type, AddonArgs args)
     {
+        // Every frame: note when the window has listings on screen, so two small result sets in a
+        // row are told apart (#75; see ResultSetBoundary.NoteGameListShown). A cheap field read.
+        if (DisplayedListings.GameListHasListings())
+            this.filter.NoteGameListShown();
+
         if (this.sinceLastCheck.Elapsed >= CheckInterval)
             this.Update(args);
     }
@@ -73,13 +78,13 @@ internal sealed unsafe class TitleUpdater : IDisposable
             if (addon == null || !addon->IsVisible)
                 return;
 
-            // Use the result set for the page on screen, not just the newest one (#51). The total
-            // includes the kept listing of each group, so it equals the sum of the [N] prefixes (#64).
+            // Use the result set for the page on screen, not just the newest one (#51). The number
+            // counts hidden listings only: extra copies within the page plus listings already seen
+            // on an earlier page (#75).
             var shown = DisplayedListings.ResultSetOnScreen(this.filter);
             this.VerifyPage((AddonLookingForGroup*)addon, shown);
 
-            var total = shown.Tracker.DuplicateListingCount;
-            if (!SetTitle(addon, total) && !this.loggedMissingTitle)
+            if (!SetTitle(addon, shown.HiddenTotal) && !this.loggedMissingTitle)
             {
                 this.loggedMissingTitle = true;
                 Plugin.Log.Warning("Party Finder title text node not found; title count disabled");
@@ -110,11 +115,11 @@ internal sealed unsafe class TitleUpdater : IDisposable
         }
     }
 
-    // Sets the title to the game's title plus " (N duplicates)" in the [N] prefix colour, or the
-    // game's title alone when total is under 2 (or null, to restore on unload). Only writes when
+    // Sets the title to the game's title plus " (N duplicates hidden)" in the [N] prefix colour, or the
+    // game's title alone when nothing is hidden (or null, to restore on unload). Only writes when
     // the encoded text actually differs, so a title the game reset to plain text gets recoloured.
     // Returns false if the title node couldn't be found.
-    private static bool SetTitle(AtkUnitBase* addon, int? total)
+    private static bool SetTitle(AtkUnitBase* addon, int? hidden)
     {
         var node = FindTitleNode(addon);
         if (node == null)
@@ -122,7 +127,7 @@ internal sealed unsafe class TitleUpdater : IDisposable
 
         var currentBytes = node->NodeText.AsSpan();
         var original = TitleText.Original(SeString.Parse(currentBytes).TextValue);
-        var suffix = total is { } n ? TitleText.Suffix(n) : null;
+        var suffix = hidden is { } n ? TitleText.Suffix(n) : null;
 
         var builder = new SeStringBuilder().AddText(original);
         if (suffix is not null)

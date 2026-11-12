@@ -15,11 +15,18 @@ namespace RemoveDuplicatePF.Core;
 /// <param name="HiddenByOthers">Listings another plugin had already hidden (not counted as duplicates).</param>
 /// <param name="Tracker">The result set's duplicate groups.</param>
 /// <param name="Page">The one-based page assigned to the result set (#74).</param>
-public sealed record ResultSetSummary(int ResultSetNumber, int Received, int HiddenByOthers, DuplicateTracker Tracker, int Page = 1)
+/// <param name="HiddenFromEarlierPages">Listings hidden because they appeared on an earlier page (#75).</param>
+public sealed record ResultSetSummary(
+    int ResultSetNumber,
+    int Received,
+    int HiddenByOthers,
+    DuplicateTracker Tracker,
+    int Page = 1,
+    int HiddenFromEarlierPages = 0)
 {
     /// <summary>
-    /// For example: <c>result set #7 (page 2): 50 listings, 5 hidden as duplicates in 4 groups, 1 hidden by
-    /// other plugins | "BUNN$BEAT club night" ×3, "Dancers wanted" ×2, ...</c>
+    /// For example: <c>result set #7 (page 2): 50 listings, 5 hidden as duplicates in 4 groups, 3 hidden
+    /// from earlier pages, 1 hidden by other plugins | "BUNN$BEAT club night" ×3, "Dancers wanted" ×2, ...</c>
     /// Groups are listed largest first, then by key.
     /// </summary>
     public string Describe()
@@ -32,7 +39,7 @@ public sealed record ResultSetSummary(int ResultSetNumber, int Received, int Hid
 
         var text = string.Create(
             CultureInfo.InvariantCulture,
-            $"result set #{this.ResultSetNumber} (page {this.Page}): {this.Received} listings, {this.Tracker.HiddenCount} hidden as duplicates in {this.Tracker.DuplicateGroupCount} groups, {this.HiddenByOthers} hidden by other plugins");
+            $"result set #{this.ResultSetNumber} (page {this.Page}): {this.Received} listings, {this.Tracker.HiddenCount} hidden as duplicates in {this.Tracker.DuplicateGroupCount} groups, {this.HiddenFromEarlierPages} hidden from earlier pages, {this.HiddenByOthers} hidden by other plugins");
 
         var list = string.Join(", ", groups);
         return list.Length == 0 ? text : $"{text} | {list}";
