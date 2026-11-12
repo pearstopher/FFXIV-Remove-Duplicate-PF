@@ -54,7 +54,7 @@ Please [report a bug](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/i
 - **Building and testing:** see [DEVELOPMENT.md](DEVELOPMENT.md). It covers the .NET 10 SDK, building, loading a dev build in game, unit tests (`dotnet test`), and the in-game checks in [docs/in-game-testing.md](docs/in-game-testing.md) and [docs/manual-tests.md](docs/manual-tests.md).
 - **Releasing:** push a version tag such as `v1.0.1`; GitHub Actions builds it, publishes the release and updates `repo.json` ([DEVELOPMENT.md, section 8](DEVELOPMENT.md#8-releasing-a-new-version)).
 - **After game or Dalamud patches:** see the patch-day checklist ([DEVELOPMENT.md, section 9](DEVELOPMENT.md#9-staying-up-to-date-after-patches)).
-- **How it works:** research and design decisions are in [docs/party-finder-notes.md](docs/party-finder-notes.md).
+- **How it works:** a plain-language tour of the code that runs in game is in [docs/how-the-code-works.md](docs/how-the-code-works.md). Research and design decisions are in [docs/party-finder-notes.md](docs/party-finder-notes.md).
 
 ## License
 
