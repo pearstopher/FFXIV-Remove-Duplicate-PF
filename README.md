@@ -1,9 +1,9 @@
-<img src="images/icon.png" alt="Remove Duplicate PF icon" width="96" align="right">
+<img src="images/icon.png" alt="Remove PF Duplicates icon" width="96" align="right">
 
-# Remove Duplicate PF
+# Remove PF Duplicates
 
-[![Build and test](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/pearstopher/FFXIV-Remove-Duplicate-PF)](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/latest)
+[![Build and test](https://github.com/pearstopher/FFXIV-Remove-PF-Duplicates/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/pearstopher/FFXIV-Remove-PF-Duplicates/actions/workflows/build.yml)
+[![Latest release](https://img.shields.io/github/v/release/pearstopher/FFXIV-Remove-PF-Duplicates)](https://github.com/pearstopher/FFXIV-Remove-PF-Duplicates/releases/latest)
 
 ![FFXIV Party Finder full of the same venue ad posted again and again](images/social-preview.png)
 
@@ -33,11 +33,11 @@ You need [XIVLauncher](https://goatcorp.github.io/) with Dalamud enabled.
 2. Under **Custom Plugin Repositories**, paste this URL into the empty field and click **+**:
 
    ```
-   https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-Duplicate-PF/main/repo.json
+   https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-PF-Duplicates/main/repo.json
    ```
 
 3. Make sure the checkbox next to the new entry is ticked, then click **Save and Close**.
-4. Type **`/xlplugins`**, go to **All Plugins**, and search for **Remove Duplicate PF**.
+4. Type **`/xlplugins`**, go to **All Plugins**, and search for **Remove PF Duplicates**.
 5. Click **Install**. It's enabled straight away.
 6. Open Party Finder (Duty menu > Party Finder). Duplicate ads now show a coloured `[N]`, and the title shows how many were combined.
 
@@ -51,7 +51,7 @@ Tested alongside [NoSoliciting](https://github.com/Noevain/NoSoliciting) and [Be
 
 ## Problems or ideas
 
-Please [report a bug](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/issues/new?template=bug.md). The form asks for your versions, what happened, and the relevant lines from `dalamud.log`, which makes problems much quicker to fix.
+Please [report a bug](https://github.com/pearstopher/FFXIV-Remove-PF-Duplicates/issues/new?template=bug.md). The form asks for your versions, what happened, and the relevant lines from `dalamud.log`, which makes problems much quicker to fix.
 
 ## Contributing
 

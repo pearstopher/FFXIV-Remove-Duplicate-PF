@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something in Remove Duplicate PF isn't working as expected
+about: Something in Remove PF Duplicates isn't working as expected
 title: ""
 labels: bug
 assignees: ""
@@ -22,7 +22,7 @@ assignees: ""
 
 ## Versions
 
-- **Plugin version:** <!-- shown in /xlplugins next to Remove Duplicate PF -->
+- **Plugin version:** <!-- shown in /xlplugins next to Remove PF Duplicates -->
 - **Dalamud version:** <!-- shown at the top of /xlsettings, or in the first lines of dalamud.log -->
 - **Game client language:** <!-- English / Japanese / German / French -->
 - **Other Party Finder plugins enabled:** <!-- e.g. NoSoliciting, Better Party Finder, or none -->

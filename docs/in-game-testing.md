@@ -15,7 +15,7 @@ First-time setup (installing the SDK, adding the dev plugin) is in [DEVELOPMENT.
 6. **Confirm the right build loaded.** In `/xllog`, filter for `RemoveDuplicatePF` and check the newest line:
 
    ```
-   Remove Duplicate PF loaded (Debug build, built <time of your last build>, from ...\bin\x64\Debug\RemoveDuplicatePF.dll)
+   Remove PF Duplicates loaded (Debug build, built <time of your last build>, from ...\bin\x64\Debug\RemoveDuplicatePF.dll)
    ```
 
    If the time is older than your last build, the game is running a stale build. Reload the plugin in `/xlplugins`, or fix the location (step 2).

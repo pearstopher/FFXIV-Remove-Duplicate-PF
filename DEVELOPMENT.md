@@ -1,6 +1,6 @@
 # Development guide
 
-How to build Remove Duplicate PF on your PC, load it into the game, and check that a change works before opening a PR.
+How to build Remove PF Duplicates on your PC, load it into the game, and check that a change works before opening a PR.
 
 You test **locally**. The build produces a plugin DLL on your machine, and you point Dalamud at it as a *dev plugin*. Nothing goes through GitHub until the release workflow (#13) exists. The `latest.zip` you may see in `bin/` is a build artifact: it is git-ignored and is not how you test.
 
@@ -49,7 +49,7 @@ A good build ends with `Build succeeded. 0 Warning(s) 0 Error(s)`. Treat new war
    ```
 
 4. Type `/xlplugins`, then go to **Dev Tools > Installed Dev Plugins**.
-5. **Remove Duplicate PF** should be listed. Enable it.
+5. **Remove PF Duplicates** should be listed. Enable it.
 
 Dalamud remembers the location, so you only do steps 2 and 3 once. If you also install the released version later, disable one of the two: never run both at the same time.
 
@@ -66,7 +66,7 @@ It only watches that one file. Building the other configuration changes nothing 
 Type `/xllog` to open the Dalamud log. Type `RemoveDuplicatePF` in its filter box to show only this plugin's messages. You should see:
 
 ```
-[RemoveDuplicatePF] Remove Duplicate PF loaded (Debug build, built 2026-11-11 10:36:02, from C:\...\bin\x64\Debug\RemoveDuplicatePF.dll)
+[RemoveDuplicatePF] Remove PF Duplicates loaded (Debug build, built 2026-11-11 10:36:02, from C:\...\bin\x64\Debug\RemoveDuplicatePF.dll)
 ```
 
 **Check this line every time you test.** The configuration, build time and path tell you exactly which build is running:
@@ -139,7 +139,7 @@ Releases are made by pushing a version tag. Everything else is automated by [.gi
 5. Players get the update the next time Dalamud checks the custom repo:
 
    ```
-   https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-Duplicate-PF/main/repo.json
+   https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-PF-Duplicates/main/repo.json
    ```
 
 A pushed tag publishes a public release straight away. If a release goes wrong, fix it on `main` and release a new version rather than reusing the tag.
