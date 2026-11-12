@@ -45,7 +45,30 @@ internal static unsafe class PageDiagnostics
             ? "(no agent)"
             : $"displayed={agent->NumberOfListingsDisplayed} category={agent->CategoryTab} area={agent->SearchAreaTab} firstId={agent->Listings.ListingIds[0]}";
 
-        return $"pageText=\"{page}\" resultsText=\"{results}\" {agentInfo}";
+        return $"pageText=\"{page}\" resultsText=\"{results}\" {agentInfo} {AgentBytes(agent)}";
+    }
+
+    // Round 2: raw agent bytes around the known page-related fields (NumberOfListingsDisplayed at
+    // 0x36B2, SearchAreaTab 0x36B9, CategoryTab 0x36BB, GroupTypeTab 0x36BC), looking for a page
+    // index or offset that already changes before the new results arrive.
+    private const int DumpStart = 0x3690;
+    private const int DumpEnd = 0x36D8; // sizeof(AgentLookingForGroup)
+
+    private static string AgentBytes(AgentLookingForGroup* agent)
+    {
+        if (agent == null)
+            return string.Empty;
+
+        var bytes = (byte*)agent;
+        var hex = new System.Text.StringBuilder("agent[0x3690..]=");
+        for (var offset = DumpStart; offset < DumpEnd; offset++)
+        {
+            if (offset > DumpStart && (offset - DumpStart) % 8 == 0)
+                hex.Append(' ');
+            hex.Append(bytes[offset].ToString("X2"));
+        }
+
+        return hex.ToString();
     }
 
     private static string Text(AtkTextNode* node) =>
