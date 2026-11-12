@@ -31,6 +31,7 @@ Each finding is marked **Confirmed (source)** when it was read in code, or **To 
   - `BatchNumber == 0` means **the last segment** of the result set. This is the signal that the page is complete, used for title updates (#10).
   - **Confirmed in game (2026-11-11):** 14 result sets (refreshes, category changes, pages) all started at 1 and ended at 0. A full page is segments 1–12 then 0. Shorter pages (10 and 26 listings) follow the same pattern (`1, 2, 0` and `1…6, 0`). No set arrived as a lone segment 0 in that session.
   - **Correction (#72, 2026-11-11 19:26):** a category with only 2 listings **did** arrive as a lone segment 0, straight after a page ending in segment 0, and the #8 rules did **not** catch it: it was merged into the previous set. Fix: the game empties its displayed list (`AgentLookingForGroup.NumberOfListingsDisplayed == 0`) whenever it requests new results, which held for every page, refresh and category change in #71's sessions. `ResultSetBoundary` now also starts a new set when the list **has just become empty** (the first listing to see it empty after one that saw it non-empty). Every listing in a segment sees the same state, because Dalamud raises a whole segment before the game processes it.
+  - **Replaced (#94, 2026-11-12):** the "list just emptied" signal read the window, which only shows what's left after the plugin's own hiding. A page with nothing visible (every listing a copy, or hidden by another plugin) never showed listings, so the next lone packet 0 was merged into it. Result sets are now split **only from what the plugin receives**: once a set's last packet (0) has arrived and a frame has passed (`ResultSetBoundary.NoteFrame`, called from `IFramework.Update`), the set is complete and the next listing starts a new one. This relies on Dalamud raising a whole packet at once (above) and a new request taking at least ~0.1 s (section 8). The repeated-ID and "more than 4 listings with one packet number" rules stay as fallbacks. The window is still read for one thing only: which recent result set is on screen (#51), by comparing the listing IDs it shows with the ones the plugin let through.
 - Fields available on `IPartyFinderListing` include `Id` (server listing ID), `ContentId`, `Name`, `Description` (`SeString`), `Category`, `Duty`, `SecondsRemaining`, `World`, `HomeWorld`, and `LastPatchHotfixTimestamp`.
 
 ### Pages and refreshes
@@ -155,7 +156,7 @@ Needed by #74 and #75: the hide decision is made per listing as it arrives, so t
 - `PageMemory` keeps, per page, the 30-character match keys of the listings the plugin left visible or hid as duplicates (not ones another plugin hid). A new search's page 1 clears it (#80; was any page 1 in #75); every result set replaces its own page's entry.
 - On page 2 and later, a listing whose key is on any earlier page is hidden, including the copy that would otherwise be kept, so no `[N]` appears for it. Empty descriptions are never hidden. Page 1 is never affected.
 - If the page index is unknown or no longer trusted (two cross-check mismatches), every set counts as page 1, which turns cross-page hiding off.
-- **Back-to-back small result sets (gap in #72, fixed here):** when two single-segment result sets arrive in a row (e.g. switching between two small categories), every listing of both sees the game's list empty, so the "list just emptied" signal never fired and they merged. `TitleUpdater` now notes each frame that the window has listings (`ResultSetBoundary.NoteGameListShown`); an empty list after that counts as a new transition.
+- **Back-to-back small result sets (gap in #72, fixed here):** when two single-segment result sets arrive in a row (e.g. switching between two small categories), every listing of both sees the game's list empty, so the "list just emptied" signal never fired and they merged. `TitleUpdater` now notes each frame that the window has listings (`ResultSetBoundary.NoteGameListShown`); an empty list after that counts as a new transition. *(Replaced in #94 by the frame rule; see section 1.)*
 
 ## 8. New search or back to page 1 (#80)
 
@@ -179,7 +180,7 @@ Previous and Refresh on page 2 both move the page index from 1 to 0, so the inde
 
 Only Next and Previous are matched by number, so if a patch renumbers the buttons, the plugin falls back to treating every result set as a new search (each page counted on its own) rather than keeping a stale memory. Since #88 pages aren't tracked, so this applies to every result set, not just page 1. The `PF result set` line shows `(new search)` or `(same search)` (before #88: `(page 1, new search)` / `(page 1, same search)`).
 
-Known gaps, tracked as low priority: changing search conditions isn't seen as a new search (#93), and a fully hidden small page can hide the start of the next small set (#94).
+Known gap, tracked as low priority: changing search conditions isn't seen as a new search (#93). (The fully hidden page that could hide the start of the next small set was fixed in #94.)
 
 ## 9. Pages overlap, and Previous can land early (#84)
 

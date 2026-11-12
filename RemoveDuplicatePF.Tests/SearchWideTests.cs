@@ -305,9 +305,9 @@ public class SearchWideTests
     public void A_listing_another_plugin_hid_never_becomes_the_first_copy()
     {
         // Another plugin hid "Spam" on page 1, so the player never saw it there.
-        this.filter.Decide(1, 1, "Spam", currentlyVisible: false, gameListEmpty: true);
-        this.filter.Decide(0, 2, "Other", currentlyVisible: true, gameListEmpty: false);
-        this.filter.NoteGameListShown();
+        this.filter.Decide(1, 1, "Spam", currentlyVisible: false);
+        this.filter.Decide(0, 2, "Other", currentlyVisible: true);
+        this.filter.NoteFrame();
 
         this.Next();
         Assert.Equal(new[] { true }, this.Page(this.New("Spam")));

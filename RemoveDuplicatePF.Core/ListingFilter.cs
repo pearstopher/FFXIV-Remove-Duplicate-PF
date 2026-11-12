@@ -50,10 +50,10 @@ public sealed class ListingFilter
     public DuplicateTracker Search => this.search;
 
     /// <summary>
-    /// Call each frame the game's displayed list has listings on screen (see
-    /// <see cref="ResultSetBoundary.NoteGameListShown"/>). Lets two small result sets in a row be told apart.
+    /// Call once per frame (see <see cref="ResultSetBoundary.NoteFrame"/>). Lets a result set that fits
+    /// in one packet be told apart from the set before it (#94).
     /// </summary>
-    public void NoteGameListShown() => this.boundary.NoteGameListShown();
+    public void NoteFrame() => this.boundary.NoteFrame();
 
     /// <summary>Call when the Party Finder window opens (#80).</summary>
     public void NoteWindowOpened() => this.searchStart.NoteWindowOpened();
@@ -71,19 +71,14 @@ public sealed class ListingFilter
     /// The current <c>args.Visible</c> value. It is shared with other plugins,
     /// so a listing another plugin already hid stays hidden and is not counted.
     /// </param>
-    /// <param name="gameListEmpty">
-    /// Whether the game's displayed list was empty when the listing arrived (#72);
-    /// see <see cref="ResultSetBoundary.IsNewResultSet"/>. Leave <c>false</c> when unknown.
-    /// </param>
     public bool Decide(
         int batchNumber,
         ulong listingId,
         string? description,
-        bool currentlyVisible,
-        bool gameListEmpty = false)
+        bool currentlyVisible)
     {
         // Track result-set boundaries for every listing, including ones another plugin hid.
-        if (this.boundary.IsNewResultSet(batchNumber, listingId, gameListEmpty))
+        if (this.boundary.IsNewResultSet(batchNumber, listingId))
         {
             var newSearch = this.searchStart.TakeIsNewSearch();
             if (newSearch)
