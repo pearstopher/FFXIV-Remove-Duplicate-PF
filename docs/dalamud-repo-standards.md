@@ -57,12 +57,21 @@ Checked on 2026-11-12 against the rules for the official plugin repository ([goa
 
 New plugins start in `testing/live/`; a later PR moves the folder to `stable/` without a version bump or new commit. Each update after that is a PR changing `commit` in the manifest, and can go straight to stable: there's no rule requiring testing builds for updates. Details in [DEVELOPMENT.md, section 10](../DEVELOPMENT.md#10-updates-in-the-official-repo). The draft submission files are in [official-repo-submission/](official-repo-submission/README.md).
 
+## The custom repo after acceptance (#112)
+
+**Decision: keep it, but stop pointing people to it.** Once the plugin is accepted into the official repo:
+
+- `repo.json`, the release workflow that updates it, and the plugin's place in the `ffxiv-plugins` combined repo all stay as they are, as a backup.
+- The README's Install section switches to the official instructions (`/xlplugins` → search for **Remove PF Duplicates**, no custom repo URL). The project itself no longer tells anyone to add the custom repo.
+
+This happens in a new issue after the official PR is accepted (#115), not before.
+
 ## Follow-up issues
 
 1. **Keep the version in the csproj** (#110, done). Set `<Version>` to the real version, bump it in each release commit, and have `release.yml` check that the tag matches the csproj instead of overriding it. Update DEVELOPMENT.md section 8.
 2. **Prepare the D17 submission files** (#111). Draft `manifest.toml` and where each file goes, in [official-repo-submission/](official-repo-submission/README.md).
 3. **AI disclosure and icon check** (#114). The owner writes the PR description and AI disclosure, and confirms whether the icon contains any AI-generated parts.
-4. **Decide the custom repo's future** (#112), before submitting. Options: keep `repo.json` for early builds, or retire it and tell users to switch. The docs don't make this a rule; it's to avoid users having the plugin from two sources.
+4. **Decide the custom repo's future** (#112, done). Keep it as a backup; after acceptance the README points to the official repo instead (see above).
 5. **Submit** (#115). The very last step, after #98 closes, and only with the owner's go-ahead.
 
 Can't be checked until submission: the build bot (Plogon) building the plugin with no internet access. The D17 PR runs that build automatically.
