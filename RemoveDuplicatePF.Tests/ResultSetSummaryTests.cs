@@ -18,7 +18,7 @@ public class ResultSetSummaryTests
         this.filter.Decide(0, 7, "Spam ad", currentlyVisible: false);
 
         Assert.Equal(
-            "result set #1 (page 1): 7 listings, 3 hidden as duplicates in 2 groups, 0 hidden from earlier pages, 1 hidden by other plugins | \"Come to my venue tonight! Door\" ×3, \"Dancers wanted\" ×2",
+            "result set #1 (page 1, new search): 7 listings, 3 hidden as duplicates in 2 groups, 0 hidden from earlier pages, 1 hidden by other plugins | \"Come to my venue tonight! Door\" ×3, \"Dancers wanted\" ×2",
             this.filter.NewestSummary.Describe());
     }
 
@@ -29,7 +29,7 @@ public class ResultSetSummaryTests
         this.filter.Decide(0, 2, "B", true);
 
         Assert.Equal(
-            "result set #1 (page 1): 2 listings, 0 hidden as duplicates in 0 groups, 0 hidden from earlier pages, 0 hidden by other plugins",
+            "result set #1 (page 1, new search): 2 listings, 0 hidden as duplicates in 0 groups, 0 hidden from earlier pages, 0 hidden by other plugins",
             this.filter.NewestSummary.Describe());
     }
 

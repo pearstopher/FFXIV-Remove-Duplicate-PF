@@ -16,21 +16,28 @@ namespace RemoveDuplicatePF.Core;
 /// <param name="Tracker">The result set's duplicate groups.</param>
 /// <param name="Page">The one-based page assigned to the result set (#74).</param>
 /// <param name="HiddenFromEarlierPages">Listings hidden because they appeared on an earlier page (#75).</param>
+/// <param name="NewSearch">Whether a page-1 result set started a new search, rather than a return to page 1 (#80).</param>
 public sealed record ResultSetSummary(
     int ResultSetNumber,
     int Received,
     int HiddenByOthers,
     DuplicateTracker Tracker,
     int Page = 1,
-    int HiddenFromEarlierPages = 0)
+    int HiddenFromEarlierPages = 0,
+    bool NewSearch = true)
 {
     /// <summary>
     /// For example: <c>result set #7 (page 2): 50 listings, 5 hidden as duplicates in 4 groups, 3 hidden
     /// from earlier pages, 1 hidden by other plugins | "BUNN$BEAT club night" ×3, "Dancers wanted" ×2, ...</c>
-    /// Groups are listed largest first, then by key.
+    /// Groups are listed largest first, then by key. Page 1 also says whether it was a new search or
+    /// the same search, e.g. <c>(page 1, new search)</c> (#80).
     /// </summary>
     public string Describe()
     {
+        var page = this.Page > 1
+            ? this.Page.ToString(CultureInfo.InvariantCulture)
+            : this.NewSearch ? "1, new search" : "1, same search";
+
         var groups = this.Tracker.DuplicateGroupsByDescription
             .Select(g => (Key: DescriptionMatch.Key(g.Key), Size: g.Value))
             .OrderByDescending(g => g.Size)
@@ -39,7 +46,7 @@ public sealed record ResultSetSummary(
 
         var text = string.Create(
             CultureInfo.InvariantCulture,
-            $"result set #{this.ResultSetNumber} (page {this.Page}): {this.Received} listings, {this.Tracker.HiddenCount} hidden as duplicates in {this.Tracker.DuplicateGroupCount} groups, {this.HiddenFromEarlierPages} hidden from earlier pages, {this.HiddenByOthers} hidden by other plugins");
+            $"result set #{this.ResultSetNumber} (page {page}): {this.Received} listings, {this.Tracker.HiddenCount} hidden as duplicates in {this.Tracker.DuplicateGroupCount} groups, {this.HiddenFromEarlierPages} hidden from earlier pages, {this.HiddenByOthers} hidden by other plugins");
 
         var list = string.Join(", ", groups);
         return list.Length == 0 ? text : $"{text} | {list}";
