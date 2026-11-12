@@ -115,6 +115,8 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 
 ## 6. Counting duplicates across pages
 
+> **Superseded by section 11 (#88).** Kept as history.
+
 **No, not reliably.** The plugin only receives the page currently being shown (section 1). Earlier pages could be remembered, but:
 
 - rows already shown on page 1 can't have their counts updated after page 2 arrives, and going back to page 1 is a new request anyway;
@@ -127,6 +129,8 @@ The main problem is timing: the count for a group (`[N]`) isn't known until **af
 **Reversed (owner, 2026-11-11, #75):** listings already seen on an **earlier** page are hidden on later pages, and the plugin still never requests pages itself. See section 7 for how the page number is found.
 
 ## 7. Which page a result set belongs to (#71, #73)
+
+> **Superseded by section 11 (#88):** pages are no longer tracked. Kept as history.
 
 Needed by #74 and #75: the hide decision is made per listing as it arrives, so the page must be known **before** the window redraws.
 
@@ -177,6 +181,8 @@ Only Next and Previous are matched by number, so if a patch renumbers the button
 
 ## 9. Pages overlap, and Previous can land early (#84)
 
+> **Superseded by section 11 (#88):** a repeated listing is now just the same listing ID. The findings about overlap still hold.
+
 **Symptom (v1.2.0):** in Others, Previous from the last page gave short or blank pages, and sometimes no Next button.
 
 **Cause:** pages are positions in a list that keeps changing (parties are listed, filled and delisted), so pages can start a few listings earlier or later than on the last visit. In **filtered categories** such as Others, the game's own Previous from the last page lands about **10 listings early**: page 2 again started at listing 41 instead of 51, so it repeated the end of page 1. A comparison build that hid nothing confirmed this happens **without the plugin's hiding** (owner's walk-through, 2026-11-11 20:47). In the biggest category Previous lands exactly. Without the plugin the overlap goes unnoticed; cross-page hiding (#75) hid the repeated listings as "seen on an earlier page", leaving short or blank pages.
@@ -193,6 +199,8 @@ Wider handling of changing results is tracked in #85.
 
 ## 10. Counts carried back to earlier pages (#81)
 
+> **Superseded by section 11 (#88).** Kept as history.
+
 **As built:** when a listing is hidden because an earlier page had its key, `PageMemory` records its **listing ID** under that key for the rest of the search. The `[N]` for a kept listing is the number of **distinct listing IDs** with its key: this page's copies plus the recorded ones. Counting IDs rather than visits means:
 - going Previous and Next again, or the game resending a page, never adds the same listing twice;
 - a copy that moved from page 2 up to page 1 between visits counts once;
@@ -200,58 +208,23 @@ Wider handling of changing results is tracked in #85.
 
 The title still uses the page's own hidden count (`DisplayedResultSet.HiddenTotal`), so it doesn't change. The `PF result set` line stays per page; the `PF prefix:` line shows each group's `[N]` (`… ×N`) including carried copies. A new search (#80) clears the recorded IDs.
 
-## 11. Research: track duplicates by listing ID instead of by page (#87)
+## 11. Duplicates tracked by listing ID across the search (#87, #88)
 
-**Question (owner, 2026-11-12):** every listing has a server ID. Could the plugin recognise duplicates by text and the kept copy by ID across the whole search, and stop tracking pages?
+**Replaces sections 6, 7, 9 and 10.** Those describe the page-based design (v1.2.x) and are kept as history.
 
-**Recommendation: yes.** It removes the page machinery, which is the source of the stale-memory problems in #85, and makes `[N]` the same everywhere. One weakness (a kept listing taken down early) has a page-free fix. Implementation: #88.
+**Spec (owner, unchanged since the start):** the first copy of an ad seen in the search is shown, with `[N]` = every copy found so far, including copies only found on later pages. Going back shows the higher number on that first copy, whatever page it's on. Every other copy is hidden on every page. A new search (opening the window, Refresh, category change; section 8) starts over. Searches always start on page 1, so the first copy seen is the first entry.
 
-### The model
+**As built (#88):**
+- `ListingFilter` keeps one `DuplicateTracker` for the whole search, reset when a new search starts. It already does everything the spec needs: the first visible ID per match key is kept, each further ID adds one to the group, and a listing ID seen again gets the same decision without being counted again.
+- So **the same listing sent again** (pages overlap, a page revisited, Previous landing early, a background re-fetch) is simply itself. The shown copy shows again with its `[N]`; a hidden copy stays hidden. There are no special cases.
+- Each result set (page) records the listings it showed and how many it hid. The title counts the copies hidden on the page on screen. Each shown listing's `[N]` is its group's size in the search, so it's the same on every page.
+- **Removed:** `PageTracker`, `PageRange`, `PageMemory`, the page index read (`InfoProxyCrossRealm` + 0x0484) and the title's range-text check. No undocumented game offset is read any more.
+- **Still used:** `ResultSetBoundary` (#72) to split result sets, matching the result set on screen by IDs (#51), and `SearchStart` (#80). A new search is decided by the last click alone; any click other than Next or Previous starts one.
+- **Log:** `PF result set #N (new search|same search): L listings, H duplicates hidden, O hidden by other plugins | "key" ×N, …`. The groups are the shown listings with copies, with search-wide counts.
 
-For the current search (cleared by a new search, #80), keep one entry per match key (`DescriptionMatch.Key`):
-- **kept ID**: the first visible listing with that key this search;
-- **all IDs**: every distinct listing ID seen with that key, with its expiry time (arrival time + `SecondsRemaining`).
+**Accepted:** if the shown copy is taken down, its copies stay hidden until Refresh (owner, 2026-11-12).
 
-For each listing that arrives:
-1. Its ID is the key's kept ID → **show** it (wherever the game puts it: page 1, or page 2 when pages overlap).
-2. The key has a kept ID that is still listed → **hide** it and record its ID.
-3. Otherwise → it becomes the kept ID and is **shown**.
-
-`[N]` on the kept listing = distinct unexpired IDs with its key. It's the same on every page, because it's one listing with one count.
-
-### What it removes
-
-| Today | With IDs |
-|---|---|
-| `PageTracker`, `PageRange`, the undocumented page index read (`InfoProxyCrossRealm` + 0x0484), the range-text check and its stale-frame race (#74, #84) | Not needed. No game offset that a patch can move. |
-| `PageMemory`: keys per page, shown IDs per page (#84), carried IDs (#81) | One dictionary per search |
-| "Earlier pages win" rule, repeated-listing exception (#84), carry-back logic (#81) | Rules 1–3 above |
-| Different `[N]` for the same ad on two pages (section 10) | One `[N]` per ad |
-
-**Still needed:** `ResultSetBoundary` (#72) for the per-page title count and for matching the result set on screen (#51); `SearchStart` (#80), because a category change must clear the memory or a kept listing in one category would hide its copies in another. The page number can stay in the `PF result set` log line for information only, without being verified.
-
-### #85's scenarios
-
-| Scenario | ID model |
-|---|---|
-| 1. Repeated listing on the next page | Shown (rule 1), not counted as hidden |
-| 2. Small shift | Only real copies hidden; no page-based decisions |
-| 3. Big shift (Previous lands early) | Repeats are kept listings or copies, same as on first sight; never a blank page caused by page memory |
-| 4. Moved up a page | Nothing is stored per page, so nothing goes stale. A copy that moved still counts once. |
-| 5. Expired listings | Dropped from `[N]` once `SecondsRemaining` runs out. Taken-down listings: see below |
-| 6. Last page changes | Nothing per page to go stale; the page check is gone |
-| 7. Background re-fetch | Unchanged: matched by IDs (#51) |
-
-### What gets worse, and mitigations
-
-1. **The kept listing disappears early** (party filled, listing taken down) while copies remain. Today, revisiting its page elects a new kept copy. With IDs, its copies would stay hidden until a new search. Expiry by `SecondsRemaining` covers listings that time out, but not ones taken down early.
-   **Mitigation, without pages:** listings arrive sorted by `SecondsRemaining` (section 1). When a result set's arrivals have passed the kept listing's projected time remaining (stored value minus time elapsed, with a small tolerance) without it showing up, it's gone from that part of the list. The next copy becomes the kept one. Refresh also clears it. Needs in-game checking of the tolerance.
-2. **"First seen wins" instead of "earliest page wins".** If an ad is first seen on page 2 and a different copy later moves up to page 1, the page-2 listing stays the kept one and the page-1 copy is hidden. The ad is still visible once. Searches start on page 1, so this only happens when listings move.
-3. **Test rewrite.** `CrossPageHidingTests`, `PageOverlapTests`, `NewSearchTests`, `CarriedCountTests` and `PageTrackerTests` are written in pages. Their scenarios carry over, but they need rewriting with explicit IDs.
-
-### Owner decision for #88
-
-A page-1 listing that the game itself sends again on page 2 (overlap) is the kept listing. Should it show its `[N]` there (the same number as on page 1), or no `[N]` on repeats? Showing it is simpler and consistent. Hiding the prefix needs a notion of the listing's "home" result set.
+**#85's scenarios** are covered by `SearchWideTests`: repeated listing, small and big shifts (Previous landing 10 early), a listing that moved up a page, last page changes, and a background re-fetch. Expired listings follow the accepted behaviour above.
 
 ---
 

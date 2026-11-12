@@ -6,13 +6,17 @@ namespace RemoveDuplicatePF.Core;
 /// event and writes the result back to <c>args.Visible</c>.
 /// </summary>
 /// <remarks>
-/// Each result set (search, refresh, category or page) gets its own
-/// <see cref="DuplicateTracker"/> for duplicates within the page. Listings already seen on an
-/// earlier page of the search are hidden entirely (#75, <see cref="PageMemory"/>). The last
-/// <see cref="HistorySize"/> result sets are kept, because the game can fetch a
-/// page in the background while a different page stays on screen (#51). The
-/// title and <c>[N]</c> prefixes must use <see cref="ForDisplayed"/>, which
-/// picks the result set matching the listings actually shown.
+/// Duplicates are tracked by listing ID across the whole search (#88): the first copy of an ad seen
+/// in the search is shown, wherever the game puts it, and every other copy is hidden on every page.
+/// Its <c>[N]</c> counts every copy found so far, including copies only found on later pages. A new
+/// search (window opened, Refresh, category change, #80) starts over. Pages aren't tracked at all.
+/// <para>
+/// Each result set (one page as the game sends it) keeps what's needed to describe it: the listings
+/// it showed and how many it hid. The last <see cref="HistorySize"/> are kept, because the game can
+/// fetch a page in the background while a different page stays on screen (#51). The title and
+/// <c>[N]</c> prefixes must use <see cref="ForDisplayed(IEnumerable{ulong})"/>, which picks the
+/// result set matching the listings actually shown.
+/// </para>
 /// </remarks>
 public sealed class ListingFilter
 {
@@ -21,34 +25,35 @@ public sealed class ListingFilter
 
     private readonly ResultSetBoundary boundary = new();
 
+    // Every listing of the current search, grouped by match key: the first copy is kept (#88).
+    private readonly DuplicateTracker search = new();
+
+    // Whether a result set starts a new search or continues the current one (#80).
+    private readonly SearchStart searchStart = new();
+
     // Newest first. Never empty.
     private readonly LinkedList<ResultSet> history = new();
+
     // The placeholder set created before any listings arrive is number 0, so the
     // first real result set is 1.
     private int nextSetNumber;
 
     public ListingFilter()
     {
-        this.StartNewSet();
+        this.StartNewSet(newSearch: true);
     }
 
-    /// <summary>The grouping state for the newest result set.</summary>
-    public DuplicateTracker Tracker => this.history.First!.Value.Tracker;
-
-    /// <summary>Assigns each result set its page and checks it against the window (#74).</summary>
-    public PageTracker Pages { get; } = new();
-
-    // What earlier pages of the current search showed (#75).
-    private readonly PageMemory memory = new();
+    /// <summary>
+    /// The current search's duplicate groups: every listing seen since the search started, grouped
+    /// by match key, with the first copy kept (#88).
+    /// </summary>
+    public DuplicateTracker Search => this.search;
 
     /// <summary>
     /// Call each frame the game's displayed list has listings on screen (see
     /// <see cref="ResultSetBoundary.NoteGameListShown"/>). Lets two small result sets in a row be told apart.
     /// </summary>
     public void NoteGameListShown() => this.boundary.NoteGameListShown();
-
-    // Whether a page-1 result set is a new search or a return to page 1 (#80).
-    private readonly SearchStart searchStart = new();
 
     /// <summary>Call when the Party Finder window opens (#80).</summary>
     public void NoteWindowOpened() => this.searchStart.NoteWindowOpened();
@@ -70,58 +75,40 @@ public sealed class ListingFilter
     /// Whether the game's displayed list was empty when the listing arrived (#72);
     /// see <see cref="ResultSetBoundary.IsNewResultSet"/>. Leave <c>false</c> when unknown.
     /// </param>
-    /// <param name="gamePageIndex">
-    /// The game's zero-based page index when the listing arrived (#74), or <c>null</c> if unknown.
-    /// Only the value at the first listing of a result set is used.
-    /// </param>
     public bool Decide(
         int batchNumber,
         ulong listingId,
         string? description,
         bool currentlyVisible,
-        bool gameListEmpty = false,
-        int? gamePageIndex = null)
+        bool gameListEmpty = false)
     {
         // Track result-set boundaries for every listing, including ones another plugin hid.
         if (this.boundary.IsNewResultSet(batchNumber, listingId, gameListEmpty))
         {
-            var page = this.Pages.PageFor(gamePageIndex);
-            var newSearch = this.searchStart.TakeIsNewSearch() && page <= 1;
-            this.StartNewSet(page, newSearch);
-            this.memory.StartPage(page, newSearch); // a new search clears what earlier searches showed
+            var newSearch = this.searchStart.TakeIsNewSearch();
+            if (newSearch)
+                this.search.Reset();
+
+            this.StartNewSet(newSearch);
         }
 
         var set = this.history.First!.Value;
         set.Received++;
 
         // Never un-hide another plugin's decision, and don't let a listing the
-        // player won't see become the kept copy of a group or count as seen on this page.
+        // player won't see become the kept copy of a group.
         if (!currentlyVisible)
         {
             set.HiddenByOthers++;
             return false;
         }
 
-        // Earlier pages win: a listing whose text was already on an earlier page is hidden entirely,
-        // including the copy that would otherwise be kept here with an [N] (#75). Except the very same
-        // listing shown there: neighbouring pages overlap when results change or the game's Previous
-        // lands early, and the game would show it again, so it's shown and not counted (#84).
-        var repeat = this.memory.ShownOnEarlierPage(set.Page, listingId);
-        if (!repeat && this.memory.SeenOnEarlierPage(set.Page, description))
-        {
-            set.HiddenFromEarlierPages++;
-            this.memory.RecordCarried(listingId, description); // counted in the earlier page's [N] (#81)
-            return false;
-        }
-
-        this.memory.Record(set.Page, description);
-        set.RecordId(listingId, description);
-        var visible = set.Tracker.Observe(listingId, description);
+        // The same listing seen again (pages overlap, a page revisited) gets the same decision.
+        var visible = this.search.Observe(listingId, description);
         if (visible)
-        {
-            set.ShownIds.Add(listingId);
-            this.memory.RecordShown(set.Page, listingId);
-        }
+            set.Shown[listingId] = description;
+        else
+            set.Hidden++;
 
         return visible;
     }
@@ -144,11 +131,11 @@ public sealed class ListingFilter
         var displayed = displayedListingIds.Where(id => id != 0).ToHashSet();
 
         var best = this.history.First!.Value;
-        var bestOverlap = displayed.Count == 0 ? 0 : best.ShownIds.Count(displayed.Contains);
+        var bestOverlap = displayed.Count == 0 ? 0 : best.Shown.Keys.Count(displayed.Contains);
 
         foreach (var set in this.history.Skip(1))
         {
-            var overlap = set.ShownIds.Count(displayed.Contains);
+            var overlap = set.Shown.Keys.Count(displayed.Contains);
             if (overlap > bestOverlap)
             {
                 best = set;
@@ -157,25 +144,11 @@ public sealed class ListingFilter
         }
 
         return new DisplayedResultSet(
-            best.Tracker, best.Number, best == this.history.First!.Value, bestOverlap, best.Page, best.HiddenFromEarlierPages, this.PrefixGroups(best));
+            best.Number, best == this.history.First!.Value, bestOverlap, best.Hidden, this.Prefixes(best));
     }
 
-    // The [N] for each kept listing on the page: its copies on this page plus copies hidden on later
-    // pages of this search, counting each listing ID once (#81). Only groups of 2 or more.
-    private Dictionary<string, int> PrefixGroups(ResultSet set)
-    {
-        var groups = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var (key, description) in set.Tracker.KeptListings)
-        {
-            var ids = set.IdsByKey.TryGetValue(key, out var onPage) ? onPage : new HashSet<ulong>();
-            var carried = this.memory.CarriedIds(key);
-            var size = carried.Count == 0 ? ids.Count : ids.Union(carried).Count();
-            if (size > 1)
-                groups[description] = size;
-        }
-
-        return groups;
-    }
+    /// <summary>Sequence number of the newest result set (cheap; for use per listing).</summary>
+    public int NewestResultSetNumber => this.history.First!.Value.Number;
 
     /// <summary>A summary of the newest result set, for the Debug log (#11).</summary>
     public ResultSetSummary NewestSummary
@@ -184,83 +157,67 @@ public sealed class ListingFilter
         {
             var set = this.history.First!.Value;
             return new ResultSetSummary(
-                set.Number, set.Received, set.HiddenByOthers, set.Tracker, set.Page, set.HiddenFromEarlierPages, set.NewSearch);
+                set.Number, set.Received, set.HiddenByOthers, set.Hidden, this.Prefixes(set), set.NewSearch);
         }
     }
 
-    private void StartNewSet(int page = 1, bool newSearch = true)
+    // The [N] for each listing the result set showed that has copies: every copy found so far this
+    // search, counted by listing ID (#81, #88). Keyed by the listing's full description.
+    private Dictionary<string, int> Prefixes(ResultSet set)
     {
-        this.history.AddFirst(new ResultSet(this.nextSetNumber++, page, newSearch));
+        var prefixes = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (id, description) in set.Shown)
+        {
+            var size = this.search.GroupSize(id);
+            if (size > 1 && description is not null)
+                prefixes[description] = size;
+        }
+
+        return prefixes;
+    }
+
+    private void StartNewSet(bool newSearch)
+    {
+        this.history.AddFirst(new ResultSet(this.nextSetNumber++, newSearch));
         while (this.history.Count > HistorySize)
             this.history.RemoveLast();
     }
 
-    private sealed class ResultSet(int number, int page, bool newSearch)
+    private sealed class ResultSet(int number, bool newSearch)
     {
         public int Number { get; } = number;
 
-        // One-based page this result set belongs to (#74).
-        public int Page { get; } = page;
-
-        // Whether it started a new search (only ever true on page 1) (#80).
+        // Whether it started a new search (#80).
         public bool NewSearch { get; } = newSearch;
 
-        public DuplicateTracker Tracker { get; } = new();
+        // Listings this result set left visible, with their descriptions.
+        public Dictionary<ulong, string?> Shown { get; } = new();
 
-        // Listings this result set left visible (kept copies and listings without duplicates).
-        public HashSet<ulong> ShownIds { get; } = new();
+        // Listings it hid as copies of a listing shown earlier in the search (on this page or another).
+        public int Hidden { get; set; }
 
         // All listings received in this result set, and how many another plugin had already hidden.
         public int Received { get; set; }
 
         public int HiddenByOthers { get; set; }
-
-        // Listings hidden because their match key was on an earlier page (#75).
-        public int HiddenFromEarlierPages { get; set; }
-
-        // match key -> IDs of this page's listings with that key (kept and hidden copies) (#81).
-        public Dictionary<string, HashSet<ulong>> IdsByKey { get; } = new(StringComparer.Ordinal);
-
-        public void RecordId(ulong listingId, string? description)
-        {
-            if (string.IsNullOrWhiteSpace(description))
-                return;
-
-            var key = DescriptionMatch.Key(description);
-            if (!this.IdsByKey.TryGetValue(key, out var ids))
-                this.IdsByKey[key] = ids = new HashSet<ulong>();
-
-            ids.Add(listingId);
-        }
     }
 }
 
 /// <summary>The result set chosen to describe what's on screen.</summary>
-/// <param name="Tracker">Its duplicate groups and counts.</param>
 /// <param name="ResultSetNumber">Sequence number of the result set since load (1 = first page received), for the debug log.</param>
 /// <param name="IsNewest">Whether it's the most recently received result set.</param>
 /// <param name="MatchedListings">How many displayed listings it matched.</param>
-/// <param name="Page">The one-based page assigned to the result set (#74).</param>
-/// <param name="HiddenFromEarlierPages">Listings hidden because they appeared on an earlier page (#75).</param>
-/// <param name="PrefixGroups">
-/// The <c>[N]</c> to show, by kept listing description: copies on this page plus copies hidden on
-/// later pages of the search (#81). <c>null</c> means the page's own groups only.
+/// <param name="HiddenTotal">
+/// Listings hidden on this page as copies of a listing shown earlier in the search. The number in the
+/// title. The shown copy of each ad isn't counted.
+/// </param>
+/// <param name="Prefixes">
+/// The <c>[N]</c> for each shown listing that has copies, by full description: every copy found so
+/// far this search (#88).
 /// </param>
 public sealed record DisplayedResultSet(
-    DuplicateTracker Tracker,
     int ResultSetNumber,
     bool IsNewest,
     int MatchedListings,
-    int Page = 1,
-    int HiddenFromEarlierPages = 0,
-    IReadOnlyDictionary<string, int>? PrefixGroups = null)
-{
-    /// <summary>The <c>[N]</c> prefix for each kept listing that has one, by full description.</summary>
-    public IReadOnlyDictionary<string, int> Prefixes => this.PrefixGroups ?? this.Tracker.DuplicateGroupsByDescription;
-
-    /// <summary>
-    /// Listings hidden on this page: extra copies within the page plus listings already seen on an
-    /// earlier page. The number in the title (#75). The visible copy of each group isn't counted.
-    /// </summary>
-    public int HiddenTotal => this.Tracker.HiddenCount + this.HiddenFromEarlierPages;
-}
+    int HiddenTotal,
+    IReadOnlyDictionary<string, int> Prefixes);

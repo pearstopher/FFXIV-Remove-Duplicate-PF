@@ -41,12 +41,11 @@ internal sealed class PartyFinderListener : IDisposable
                 listing.Id,
                 listing.Description.TextValue,
                 args.Visible,
-                DisplayedListings.GameListIsEmpty(),
-                DisplayedListings.GamePageIndex());
+                DisplayedListings.GameListIsEmpty());
 
             // Batch 0 is the result set's final segment. Log one summary line a frame later,
             // after the whole segment is processed, instead of a line per listing (#11).
-            var set = this.filter.NewestSummary.ResultSetNumber;
+            var set = this.filter.NewestResultSetNumber;
             if (args.BatchNumber == 0 && this.summaryScheduledFor != set)
             {
                 this.summaryScheduledFor = set;
