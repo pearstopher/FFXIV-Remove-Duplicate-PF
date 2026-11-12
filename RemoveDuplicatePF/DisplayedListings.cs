@@ -34,7 +34,7 @@ internal static unsafe class DisplayedListings
                 shown.ResultSetNumber,
                 shown.IsNewest ? "newest" : "older",
                 shown.MatchedListings,
-                shown.Tracker.HiddenCount);
+                shown.HiddenTotal);
         }
 
         return shown;
@@ -51,36 +51,10 @@ internal static unsafe class DisplayedListings
         return agent != null && agent->NumberOfListingsDisplayed == 0;
     }
 
-    /// <summary>How many listings the window is showing, or <c>null</c> if unknown (#84).</summary>
-    public static int? DisplayedCount()
-    {
-        var agent = AgentLookingForGroup.Instance();
-        return agent == null ? null : agent->NumberOfListingsDisplayed;
-    }
-
     /// <summary>Whether the game's displayed listing list has listings right now (#75).</summary>
     public static bool GameListHasListings()
     {
         var agent = AgentLookingForGroup.Instance();
         return agent != null && agent->NumberOfListingsDisplayed > 0;
-    }
-
-    /// <summary>
-    /// Offset of the zero-based Party Finder page index in <c>InfoProxyCrossRealm</c> (#73).
-    /// Not in FFXIVClientStructs, so <see cref="PageTracker.Verify"/> checks it against the window.
-    /// </summary>
-    private const int PageIndexOffset = 0x0484;
-
-    /// <summary>
-    /// The game's zero-based page index for the results being requested or received, or
-    /// <c>null</c> if it can't be read. Already correct when a result set's first listing arrives (#73).
-    /// </summary>
-    public static int? GamePageIndex()
-    {
-        var agent = AgentLookingForGroup.Instance();
-        if (agent == null || agent->InfoProxyCrossRealm == null)
-            return null;
-
-        return ((byte*)agent->InfoProxyCrossRealm)[PageIndexOffset];
     }
 }

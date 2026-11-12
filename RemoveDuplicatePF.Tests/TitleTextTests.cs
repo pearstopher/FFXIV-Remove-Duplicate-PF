@@ -72,7 +72,7 @@ public class TitleTextTests
     public void Title_counts_hidden_listings_not_the_visible_copies()
     {
         // [3] [2] [2] on the page: 2 + 1 + 1 extra copies hidden (the 3 visible copies aren't counted).
-        var tracker = new DuplicateTracker();
+        var filter = new ListingFilter();
         var listings = new (ulong Id, string Text)[]
         {
             (1, "Venue A"), (2, "Venue A"), (3, "Venue A"),
@@ -81,9 +81,9 @@ public class TitleTextTests
             (8, "Solo listing"),
         };
         foreach (var (id, text) in listings)
-            tracker.Observe(id, text);
+            filter.Decide(id <= 4 ? 1 : 0, id, text, true); // segment 1 (4 listings), then the final segment 0
 
-        var shown = new DisplayedResultSet(tracker, 1, true, 4);
+        var shown = filter.ForDisplayed(Array.Empty<ulong>());
 
         Assert.Equal(4, shown.HiddenTotal);
         Assert.Equal("Party Finder (4 duplicates hidden)", TitleText.Compose("Party Finder", shown.HiddenTotal));
@@ -92,11 +92,11 @@ public class TitleTextTests
     [Fact]
     public void No_duplicates_means_no_suffix()
     {
-        var tracker = new DuplicateTracker();
-        tracker.Observe(1, "A");
-        tracker.Observe(2, "B");
+        var filter = new ListingFilter();
+        filter.Decide(1, 1, "A", true);
+        filter.Decide(1, 2, "B", true);
 
-        var shown = new DisplayedResultSet(tracker, 1, true, 2);
+        var shown = filter.ForDisplayed(Array.Empty<ulong>());
 
         Assert.Equal(0, shown.HiddenTotal);
         Assert.Equal("Party Finder", TitleText.Compose("Party Finder", shown.HiddenTotal));

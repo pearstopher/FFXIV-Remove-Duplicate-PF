@@ -9,7 +9,9 @@ namespace RemoveDuplicatePF.Core;
 /// displays them. The first listing in each group is kept; later ones are
 /// hidden. Display order is trusted as-is: no age signal is used.
 /// Listings with an empty or whitespace-only description are never combined.
-/// Call <see cref="Reset"/> when a new result set starts.
+/// <see cref="ListingFilter"/> keeps one for the whole search (#88) and calls <see cref="Reset"/>
+/// when a new search starts, so the first copy seen on any page is kept and a listing sent again
+/// on another page gets the same decision.
 /// </remarks>
 public sealed class DuplicateTracker
 {
@@ -91,12 +93,6 @@ public sealed class DuplicateTracker
             .Select(k => (k.Description, Size: this.groupSizeByKeptId[k.Id]))
             .Where(g => g.Size > 1)
             .ToDictionary(g => g.Description, g => g.Size, StringComparer.Ordinal);
-
-    /// <summary>
-    /// Every kept listing (with or without duplicates): its match key and full description (#81).
-    /// </summary>
-    public IEnumerable<(string Key, string Description)> KeptListings =>
-        this.keptByKey.Select(k => (k.Key, k.Value.Description));
 
     /// <summary>Clears all state, ready for a new result set.</summary>
     public void Reset()

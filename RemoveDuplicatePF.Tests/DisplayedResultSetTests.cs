@@ -44,67 +44,76 @@ public class DisplayedResultSetTests
         (14917, "[FYLC] 20M BOOSTED BINGO! | BL"), (14782, "BUNN$BEAT club night every Friday"),
         (14783, "BUNN$BEAT club night every Friday"), (200, "Single C"));
 
+    // Open the window on page 1, then Next to page 2. Returns page 2's shown listings.
+    private List<ulong> OpenAndGoToPage2()
+    {
+        this.filter.NoteWindowOpened();
+        this.Page1();
+        this.filter.NoteButtonClick(SearchStart.NextButton);
+        return this.Page2();
+    }
+
     [Fact]
     public void Background_refetch_of_page_1_does_not_change_the_count_for_page_2_on_screen()
     {
-        this.Page1();
-        var page2OnScreen = this.Page2();
-        this.Page1(); // background re-fetch while page 2 stays on screen
+        var page2OnScreen = this.OpenAndGoToPage2();
+        this.Page1(); // background re-fetch while page 2 stays on screen (no click)
 
         var shown = this.filter.ForDisplayed(page2OnScreen);
 
-        Assert.Equal(4, shown.Tracker.HiddenCount);
+        // Page 2 hides its 3 BUNN$BEAT copies (page 1 showed that ad) plus one copy each of two ads.
+        Assert.Equal(5, shown.HiddenTotal);
         Assert.False(shown.IsNewest);
         Assert.Equal(2, shown.ResultSetNumber); // the second result set received
         Assert.Equal(
             new Dictionary<string, int>
             {
-                ["BUNN$BEAT club night every Friday"] = 3,
                 ["The taste that lingers, come try"] = 2,
                 ["[FYLC] 20M BOOSTED BINGO! | BL"] = 2,
             },
-            shown.Tracker.DuplicateGroupsByDescription);
+            shown.Prefixes);
     }
 
     [Fact]
     public void Page_on_screen_that_is_also_the_newest_uses_the_newest()
     {
-        this.Page1();
-        var page2 = this.Page2();
+        var page2 = this.OpenAndGoToPage2();
 
         var shown = this.filter.ForDisplayed(page2);
 
         Assert.True(shown.IsNewest);
-        Assert.Equal(4, shown.Tracker.HiddenCount);
+        Assert.Equal(5, shown.HiddenTotal);
     }
 
     [Fact]
-    public void Going_back_to_page_1_uses_page_1()
+    public void Going_back_to_page_1_uses_page_1_with_page_2s_copies_counted()
     {
+        this.OpenAndGoToPage2();
+        this.filter.NoteButtonClick(SearchStart.PreviousButton);
         var page1 = this.Page1();
-        this.Page2();
-        this.Page1();
 
-        Assert.Equal(5, this.filter.ForDisplayed(page1).Tracker.HiddenCount);
+        var shown = this.filter.ForDisplayed(page1);
+
+        Assert.Equal(5, shown.HiddenTotal);
+        Assert.Equal(5, shown.Prefixes["BUNN$BEAT club night every Friday"]); // 2 on page 1 + 3 on page 2
+        Assert.Equal(2, shown.Prefixes["[RP] Utterly Delicious - Hingan"]);
     }
 
     [Fact]
     public void With_nothing_displayed_the_newest_set_is_used()
     {
-        this.Page1();
-        this.Page2();
+        this.OpenAndGoToPage2();
 
         var shown = this.filter.ForDisplayed(Array.Empty<ulong>());
 
         Assert.True(shown.IsNewest);
-        Assert.Equal(4, shown.Tracker.HiddenCount);
+        Assert.Equal(5, shown.HiddenTotal);
     }
 
     [Fact]
     public void Zero_ids_in_the_displayed_list_are_ignored()
     {
-        this.Page1();
-        this.Page2();
+        this.OpenAndGoToPage2();
 
         Assert.True(this.filter.ForDisplayed(new ulong[] { 0, 0, 0 }).IsNewest);
     }
@@ -132,10 +141,40 @@ public class DisplayedResultSetTests
     [Fact]
     public void Hidden_duplicates_are_not_counted_as_shown_listings()
     {
-        this.Page1();
-        var page2 = this.Page2();
+        var page2 = this.OpenAndGoToPage2();
 
         // 16135 is a hidden copy on page 2; the window never shows it.
         Assert.DoesNotContain(16135UL, page2);
+    }
+
+    [Fact]
+    public void Short_last_page_is_found_despite_stale_slots_from_the_previous_page()
+    {
+        // Owner's 19:40:31 walk-through: page 3 had 50 listings, page 4 only 18. The game's 50
+        // displayed-listing slots kept page 3's IDs after the first 18, which outnumbered page 4's
+        // and made page 3 look like it was on screen (#74).
+        var page3 = Enumerable.Range(300, 50).Select(i => ((ulong)i, $"Listing {i}")).ToArray();
+        var page4 = Enumerable.Range(400, 18).Select(i => ((ulong)i, $"Listing {i}")).ToArray();
+        this.Feed(page3);
+        this.Feed(page4);
+
+        var slots = page4.Concat(page3.Skip(18)).Select(l => l.Item1).ToArray(); // 18 new IDs, then 32 stale
+
+        Assert.Equal(1, this.filter.ForDisplayed(slots).ResultSetNumber);                    // all 50 slots: wrong
+        Assert.Equal(2, this.filter.ForDisplayed(slots, displayedCount: 18).ResultSetNumber); // shown slots: right
+        Assert.Equal(18, this.filter.ForDisplayed(slots, displayedCount: 18).MatchedListings);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void No_displayed_slots_fall_back_to_the_newest(int count)
+    {
+        this.filter.Decide(1, 1, "A", true, gameListEmpty: true);
+
+        var shown = this.filter.ForDisplayed(new ulong[] { 1, 2, 3 }, count);
+
+        Assert.True(shown.IsNewest);
+        Assert.Equal(0, shown.MatchedListings);
     }
 }

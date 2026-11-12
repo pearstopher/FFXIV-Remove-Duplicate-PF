@@ -12,8 +12,8 @@ namespace RemoveDuplicatePF;
 /// <summary>
 /// Shows the number of hidden listings in the Party Finder window title,
 /// e.g. <c>Party Finder (7 duplicates hidden)</c> with the count in the <c>[N]</c> prefix colour,
-/// and restores the game's title on unload. It counts extra copies within the page plus
-/// listings already seen on an earlier page; the visible copy of each group isn't counted (#75).
+/// and restores the game's title on unload. It counts the listings hidden on the page on screen:
+/// copies of an ad whose first copy was shown earlier in the search, on this page or another (#88).
 /// </summary>
 /// <remarks>
 /// The title is the window component's title text node (<c>AtkComponentWindow</c>,
@@ -84,10 +84,8 @@ internal sealed unsafe class TitleUpdater : IDisposable
                 return;
 
             // Use the result set for the page on screen, not just the newest one (#51). The number
-            // counts hidden listings only: extra copies within the page plus listings already seen
-            // on an earlier page (#75).
+            // counts the listings hidden on that page: copies of an ad shown earlier in the search (#88).
             var shown = DisplayedListings.ResultSetOnScreen(this.filter);
-            this.VerifyPage((AddonLookingForGroup*)addon, shown);
 
             if (SetTitle(addon, shown.HiddenTotal))
             {
@@ -102,25 +100,6 @@ internal sealed unsafe class TitleUpdater : IDisposable
         catch (Exception ex)
         {
             Plugin.Log.Error(ex, "Error updating Party Finder title");
-        }
-    }
-
-    // Cross-checks the page assigned to the result set on screen against the window's range text
-    // (e.g. "51-93" = page 2), because the game's page index isn't a documented field (#74). Runs
-    // here so no extra window listener is needed. Only checks when the window is showing that
-    // result set's listings. Two mismatches in a row stop trusting the index for this session.
-    private void VerifyPage(AddonLookingForGroup* addon, DisplayedResultSet shown)
-    {
-        if (shown.MatchedListings == 0 || addon->CurrentPageTextNode == null)
-            return;
-
-        var rangeText = SeString.Parse(addon->CurrentPageTextNode->NodeText.AsSpan()).TextValue;
-        if (this.filter.Pages.Verify(shown.Page, rangeText, DisplayedListings.DisplayedCount()))
-        {
-            Plugin.Log.Warning(
-                "Party Finder page index disagrees with the window (assigned page {Page}, window shows \"{Range}\"); counting every page as page 1 for this session",
-                shown.Page,
-                rangeText);
         }
     }
 

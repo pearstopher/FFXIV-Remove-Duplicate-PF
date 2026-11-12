@@ -13,7 +13,7 @@ public class ListingFilterTests
         Assert.False(this.filter.Decide(1, 2, "Venue", currentlyVisible: true));
         Assert.True(this.filter.Decide(1, 3, "Other", currentlyVisible: true));
 
-        Assert.Equal(1, this.filter.Tracker.HiddenCount);
+        Assert.Equal(1, this.filter.Search.HiddenCount);
     }
 
     [Theory]
@@ -41,9 +41,9 @@ public class ListingFilterTests
         Assert.True(this.filter.Decide(1, 2, "Venue", currentlyVisible: true));
         Assert.False(this.filter.Decide(1, 3, "Venue", currentlyVisible: true));
 
-        Assert.Equal(0, this.filter.Tracker.GroupSize(1));
-        Assert.Equal(2, this.filter.Tracker.GroupSize(2));
-        Assert.Equal(1, this.filter.Tracker.HiddenCount);
+        Assert.Equal(0, this.filter.Search.GroupSize(1));
+        Assert.Equal(2, this.filter.Search.GroupSize(2));
+        Assert.Equal(1, this.filter.Search.HiddenCount);
     }
 
     [Fact]
@@ -52,12 +52,12 @@ public class ListingFilterTests
         this.filter.Decide(1, 1, "Venue", true);
         this.filter.Decide(1, 2, "Venue", true);
         this.filter.Decide(0, 3, "Venue", true);
-        Assert.Equal(2, this.filter.Tracker.HiddenCount);
+        Assert.Equal(2, this.filter.Search.HiddenCount);
 
         // Refresh: the same listings come back, starting at segment 1.
         Assert.True(this.filter.Decide(1, 1, "Venue", true));
-        Assert.Equal(0, this.filter.Tracker.HiddenCount);
-        Assert.Equal(1, this.filter.Tracker.GroupSize(1));
+        Assert.Equal(0, this.filter.Search.HiddenCount);
+        Assert.Equal(1, this.filter.Search.GroupSize(1));
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class ListingFilterTests
         this.filter.Decide(0, 2, "Venue", true);
 
         Assert.True(this.filter.Decide(1, 51, "Venue", true));
-        Assert.Equal(0, this.filter.Tracker.HiddenCount);
+        Assert.Equal(0, this.filter.Search.HiddenCount);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class ListingFilterTests
 
         // New set starts with a listing another plugin hid; tracking still resets.
         Assert.False(this.filter.Decide(1, 9, "Other", currentlyVisible: false));
-        Assert.Equal(0, this.filter.Tracker.HiddenCount);
+        Assert.Equal(0, this.filter.Search.HiddenCount);
         Assert.True(this.filter.Decide(1, 2, "Venue", true));
     }
 }

@@ -133,6 +133,6 @@ public class SmallResultSetTests
         var summary = filter.NewestSummary;
         Assert.Equal(2, summary.ResultSetNumber);
         Assert.Equal(2, summary.Received);
-        Assert.Equal(0, summary.Tracker.HiddenCount);
+        Assert.Equal(0, summary.Hidden);
     }
 }

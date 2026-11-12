@@ -8,9 +8,9 @@ namespace RemoveDuplicatePF.Core;
 /// e.g. <c>Party Finder (7 duplicates hidden)</c>, and recovers the game's own title from it.
 /// </summary>
 /// <remarks>
-/// The number counts hidden listings only (#75, owner's decision on #71): extra copies within
-/// the page plus listings hidden because they appeared on an earlier page. The visible copy of
-/// each group isn't counted. Use <see cref="DisplayedResultSet.HiddenTotal"/> for the page on
+/// The number counts hidden listings only (owner's decision on #71): the copies hidden on the
+/// page, whether the shown copy of their ad is on this page or another (#88). The visible copy
+/// isn't counted. Use <see cref="DisplayedResultSet.HiddenTotal"/> for the page on
 /// screen (#51). The plugin shows the suffix in the prefix colour; this class only deals with
 /// plain text.
 /// </remarks>

@@ -77,7 +77,7 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
 The count is for the **page currently shown**.
 
 1. Open a busy category with duplicates.
-   - **Expected:** the title reads `Party Finder (N duplicates hidden)` (`1 duplicate hidden` when N is 1), with the suffix in the same colour as the `[N]` prefixes. **N counts hidden listings only:** each `[N]` adds N − 1 (the visible copy isn't counted), plus listings hidden because an earlier page had them (for example `[3] [2]` plus 4 from page 1 → 7). In the Debug log it equals "hidden as duplicates" plus "hidden from earlier pages" in that page's `PF result set` line (#75).
+   - **Expected:** the title reads `Party Finder (N duplicates hidden)` (`1 duplicate hidden` when N is 1), with the suffix in the same colour as the `[N]` prefixes. **N counts the copies hidden on the page:** copies of an ad shown on this page plus copies of ads already shown on another page (for example `[3] [2]` plus 4 copies of page 1's ads → 7). In the Debug log it equals "duplicates hidden" in that page's `PF result set` line (#88).
 2. Open a category or page with no duplicates.
    - **Expected:** the title is just `Party Finder`.
 3. Refresh, change category and change page a few times.
@@ -93,31 +93,27 @@ The count is for the **page currently shown**.
    - **Expected:** the title keeps matching page 2 (compare it with page 2's `PF result set` line). The game may re-download page 1 in the background; that must not change the title or prefixes for page 2.
    - In the Debug log, `PF on screen: result set #N (older, M listings matched…)` means the plugin noticed a background fetch and kept using the page on screen. **If M is always 0,** the game's displayed-listings list isn't what we expected; report it.
 
-## Listings seen on earlier pages (#75)
+## Each ad once across pages (#88)
 
-1. On a busy category with several pages, note a few listings on page 1, then press Next.
-   - **Expected:** none of page 1's listings (by their first 30 characters) appear on page 2, not even as a `[N]` group. The `PF result set #… (page 2)` line shows "E hidden from earlier pages".
+1. On a busy category with several pages, note a few ads on page 1, then press Next.
+   - **Expected:** no other copy of page 1's ads (by their first 30 characters) appears on page 2. The game may show the very same listing again near the top (pages overlap); that's the same listing, shown with its `[N]`.
 2. Go on to page 3.
-   - **Expected:** nothing from pages 1 or 2 appears.
-3. Go back to page 1 with Previous.
-   - **Expected:** page 1 shows everything as normal ("0 hidden from earlier pages"), and its `PF result set` line says `(page 1, same search)` (#80). Next to page 2 and 3 again: page 3 still hides what page 2 showed.
-4. On page 2 or 3, press Refresh. Then do the same with a category tab, and by closing and reopening the window.
-   - **Expected:** each time, the `PF result set` line says `(page 1, new search)`, and going forward hides only what the new page 1 has.
-5. **Counts carried back (#81):** on page 2, note a listing that page 1 showed (it's hidden on page 2, so look at "hidden from earlier pages" in the log). Press Previous.
-   - **Expected:** that listing's `[N]` on page 1 is higher than before, by the number of copies page 2 had (a single listing becomes `[2]`). The `PF prefix:` log line shows each group as `… ×N` with the new total. The title for page 1 is the same as before.
+   - **Expected:** no other copy of an ad from pages 1 or 2 appears.
+3. **Counts from later pages:** go back to page 1 with Previous.
+   - **Expected:** an ad's `[N]` is higher than before by the number of copies pages 2 and 3 had (a single listing becomes `[2]`). The `PF prefix:` log line shows each group as `… ×N` with the new total. The `PF result set` line says `(same search)` (#80). The title for page 1 is the same as before.
    - Next, then Previous again. **Expected:** the `[N]` doesn't go up again.
-   - Press Refresh. **Expected:** the `[N]` go back to page 1's own counts.
-6. Switch back and forth between two categories that each have only a few listings.
+4. On page 2 or 3, press Refresh. Then do the same with a category tab, and by closing and reopening the window.
+   - **Expected:** each time, the `PF result set` line says `(new search)` and the `[N]` go back to page 1's own counts.
+5. Switch back and forth between two categories that each have only a few listings.
    - **Expected:** each switch logs its own `PF result set` line with the right listing count; the two categories are never merged into one set.
-6. **Overlapping pages (#84):** in **Others** (a filtered category), go Next to the last page, then Previous back to page 1. Do the same in the biggest category.
-   - **Expected:** no page is blank or unexpectedly short, the range text (bottom right) matches what you'd see without the plugin, and Next is there whenever it would be without the plugin. A page may repeat a few listings from the page before; that's the game's own overlap and it happens without the plugin too.
-   - **Expected:** no `page index disagrees with the window` warning in the log.
+6. **Shifting pages (#84, #85):** in **Others** (a filtered category), go Next to the last page, then Previous back to page 1, twice. Do the same in the biggest category.
+   - **Expected:** no page is blank or unexpectedly short, the range text (bottom right) matches what you'd see without the plugin, and Next is there whenever it would be without the plugin. Each ad shows once, with the same `[N]` wherever its shown copy appears.
 
 ## Other Party Finder plugins (#28)
 
 If you use NoSoliciting, Better Party Finder or similar plugins, run the #7–#10 checks with them enabled, once after a **full game restart** and once after **re-enabling** Remove Duplicate PF in `/xlplugins`. The order plugins run in differs between those two cases (see `docs/party-finder-notes.md`, "Compatibility with other Party Finder plugins").
 
-- **Expected:** in both cases, the title count equals "hidden as duplicates" plus "hidden from earlier pages" in the page's `PF result set` line (on page 1 of a new search, the sum of N − 1 over the `[N]` prefixes; after going back from a later page, the `[N]` can be higher, #81).
+- **Expected:** in both cases, the title count equals "duplicates hidden" in the page's `PF result set` line (on page 1 of a new search, the sum of N − 1 over the `[N]` prefixes; after going back from a later page, the `[N]` can be higher).
 - **If the title is higher only after a restart,** another plugin hid a listing we kept. File a bug and include the times of both runs.
 
 ## Enable/disable cycle and no side effects (#11)
