@@ -5,14 +5,20 @@
     "InternalName": "RemoveDuplicatePF",
     "AssemblyVersion": "1.2.2.0",
     "Description": "This plugin removes duplicate Party Finder listings. Entries with duplicates are shown once and are marked with a count [n] representing the number of copies that were found. The total number of duplicate entries is shown in the title bar.\n\nThis plugin has no settings.",
-    "Punchline": "Collapses duplicate Party Finder listings into one.",
+    "Punchline": "Hide duplicate Party Finder ads. Each repeated listing shows once, with a count.",
     "ApplicableVersion": "any",
     "RepoUrl": "https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF",
     "IconUrl": "https://raw.githubusercontent.com/pearstopher/FFXIV-Remove-Duplicate-PF/main/images/icon.png",
     "Tags": [
       "party finder",
+      "pf",
       "duplicates",
-      "filter"
+      "duplicate",
+      "hide",
+      "filter",
+      "spam",
+      "ads",
+      "listings"
     ],
     "DalamudApiLevel": 15,
     "LoadRequiredState": 0,

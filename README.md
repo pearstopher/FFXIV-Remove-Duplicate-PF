@@ -5,9 +5,11 @@
 [![Build and test](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/actions/workflows/build.yml)
 [![Latest release](https://img.shields.io/github/v/release/pearstopher/FFXIV-Remove-Duplicate-PF)](https://github.com/pearstopher/FFXIV-Remove-Duplicate-PF/releases/latest)
 
-A [Dalamud](https://github.com/goatcorp/Dalamud) plugin for FINAL FANTASY XIV that cleans up the Party Finder. When the same ad is posted several times, you see it **once**, marked with how many copies there were.
+Hide duplicate Party Finder ads in FINAL FANTASY XIV (FFXIV / FF14). This [Dalamud](https://github.com/goatcorp/Dalamud) plugin cleans up the Party Finder: when the same ad is posted several times, as often happens with spam, venue ads and recruitment ads, you see it **once**, marked with how many copies there were.
 
 There are no settings: install it, enable it, and open Party Finder.
+
+**How do I hide duplicate Party Finder ads in FF14?** Install this plugin through XIVLauncher (see [Install](#install)). Repeated listings are combined into one automatically.
 
 ## What it does
 
