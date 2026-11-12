@@ -77,8 +77,9 @@ internal sealed unsafe class ListingPrefixer : IDisposable
             if (addon == null || !addon->IsVisible)
                 return;
 
-            // Use the result set for the page on screen, not just the newest one (#51).
-            var groups = DisplayedListings.ResultSetOnScreen(this.filter).Tracker.DuplicateGroupsByDescription;
+            // Use the result set for the page on screen, not just the newest one (#51). Its [N] include
+            // copies hidden on later pages of the search (#81).
+            var groups = DisplayedListings.ResultSetOnScreen(this.filter).Prefixes;
             if (groups.Count == 0)
                 return;
 
@@ -188,14 +189,15 @@ internal sealed unsafe class ListingPrefixer : IDisposable
         Plugin.Log.Debug("Restored original text on {Count} Party Finder rows", restored);
     }
 
-    // Debug summary, logged only when it changes. Shows whether rows are being matched in game.
     // Debug summary, logged only when it changes. Names the groups whose kept row is (and isn't)
     // prefixed on screen right now, so a missing [N] can be traced to its group (#54).
     // Groups scrolled out of view are expected under "not on screen".
     private void LogSummary(IReadOnlyDictionary<string, int> groups, HashSet<string> matched)
     {
-        var prefixed = groups.Keys.Where(matched.Contains).Select(Short).OrderBy(d => d, StringComparer.Ordinal);
-        var missing = groups.Keys.Where(d => !matched.Contains(d)).Select(Short).OrderBy(d => d, StringComparer.Ordinal);
+        // Each group with its [N], which includes copies hidden on later pages (#81).
+        string Describe(string d) => $"{Short(d)} ×{groups[d]}";
+        var prefixed = groups.Keys.Where(matched.Contains).Select(Describe).OrderBy(d => d, StringComparer.Ordinal);
+        var missing = groups.Keys.Where(d => !matched.Contains(d)).Select(Describe).OrderBy(d => d, StringComparer.Ordinal);
         var summary =
             $"{matched.Count} of {groups.Count} groups prefixed on screen | prefixed: [{string.Join(" ; ", prefixed)}] | not on screen: [{string.Join(" ; ", missing)}]";
         if (summary == this.lastLoggedSummary)
