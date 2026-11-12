@@ -59,6 +59,9 @@ internal sealed unsafe class TitleUpdater : IDisposable
 
     private void OnUpdate(AddonEvent type, AddonArgs args)
     {
+        // RESEARCH ONLY (#71): check the window's page text every frame to catch exactly when it changes.
+        PageDiagnostics.LogIfWindowChanged();
+
         if (this.sinceLastCheck.Elapsed >= CheckInterval)
             this.Update(args);
     }

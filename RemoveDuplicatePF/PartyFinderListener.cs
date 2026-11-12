@@ -36,12 +36,17 @@ internal sealed class PartyFinderListener : IDisposable
     {
         try
         {
+            var setBefore = this.filter.NewestSummary.ResultSetNumber;
             args.Visible = this.filter.Decide(
                 args.BatchNumber,
                 listing.Id,
                 listing.Description.TextValue,
                 args.Visible,
                 DisplayedListings.GameListIsEmpty());
+
+            // RESEARCH ONLY (#71): window state at the moment a new result set starts arriving.
+            if (this.filter.NewestSummary.ResultSetNumber != setBefore)
+                PageDiagnostics.LogResultSetStart(this.filter.NewestSummary.ResultSetNumber, args.BatchNumber);
 
             // Batch 0 is the result set's final segment. Log one summary line a frame later,
             // after the whole segment is processed, instead of a line per listing (#11).
