@@ -31,15 +31,21 @@ jobs:
           Expand-Archive -Force latest.zip $dalamudHome
           "DALAMUD_HOME=$dalamudHome" >> $env:GITHUB_ENV
 
-      - name: Work out the version from the tag
+      # The version lives in the csproj, because the official Dalamud repo builds it as committed (#110).
+      - name: Check the tag matches the csproj version
         shell: pwsh
         run: |
           # v1.2.3 -> 1.2.3.0 (Dalamud uses four-part assembly versions)
-          $version = "$env:GITHUB_REF_NAME".TrimStart('v') + ".0"
-          "PLUGIN_VERSION=$version" >> $env:GITHUB_ENV
+          $expected = "$env:GITHUB_REF_NAME".TrimStart('v') + ".0"
+          $actual = (Select-Xml -Path RemoveDuplicatePF/RemoveDuplicatePF.csproj -XPath '//Version').Node.InnerText.Trim()
+          if ($actual -ne $expected) {
+            Write-Output "::error::Tag $env:GITHUB_REF_NAME needs <Version>$expected</Version> in RemoveDuplicatePF.csproj, but it says $actual. Bump the csproj, then tag that commit."
+            exit 1
+          }
+          Write-Output "Version $actual matches tag $env:GITHUB_REF_NAME"
 
       - name: Build
-        run: dotnet build --configuration Release -p:Version=${{ env.PLUGIN_VERSION }}
+        run: dotnet build --configuration Release
 
       - name: Test
         run: dotnet test --configuration Release --no-build

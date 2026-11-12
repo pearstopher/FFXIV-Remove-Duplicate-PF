@@ -2,7 +2,7 @@
 
 Checked on 2026-11-12 against the rules for the official plugin repository ([goatcorp/DalamudPluginsD17](https://github.com/goatcorp/DalamudPluginsD17)). The plugin is only in the custom repo (`repo.json`) for now.
 
-**Summary:** the plugin's code and behavior follow the rules. There's one build problem: the version number isn't stored in the code. The rest is submission paperwork, mainly the AI disclosure, which only the owner can write.
+**Summary:** the plugin's code and behavior follow the rules. The one build problem (the version number wasn't stored in the code) is fixed (#110). The rest is submission paperwork, mainly the AI disclosure, which only the owner can write.
 
 ## Sources
 
@@ -37,7 +37,7 @@ Checked on 2026-11-12 against the rules for the official plugin repository ([goa
 | `packages.lock.json` committed | ✅ | `RemoveDuplicatePF/packages.lock.json` is tracked, and `dotnet restore --locked-mode` passes. `RemoveDuplicatePF.Core` has no packages, so it doesn't need a lock file. |
 | No downloads during the build | ✅ | The build doesn't fetch anything beyond the NuGet packages in the lock file. |
 | Required manifest fields (Name, Author, Punchline, Description) | ✅ | Set in `RemoveDuplicatePF.csproj`. Tags and RepoUrl are set too. |
-| **Same commit always builds the same version** | ❌ | `<Version>` in the csproj is still `1.1.2.0`. Releases replace it with the tag (`-p:Version=` in `release.yml`), so the version depends on the tag. D17 builds the committed csproj, so it would ship as 1.1.2.0, older than the 1.2.1 that's already out. |
+| Same commit always builds the same version | ✅ | Fixed in #110: `<Version>` in the csproj is the real version, bumped in each release commit. `release.yml` checks the tag matches it instead of overriding it, and a unit test fails if it's older than the version in `repo.json`. |
 | Icon 64–512 px, square PNG | ✅ | `images/icon.png` is 512×512. The submission needs a copy at `testing/live/RemoveDuplicatePF/images/icon.png` in D17. |
 | Extra images (optional) | — | None. If any are added later, they must be PNGs no larger than 730×380. |
 | Regular windows use the Dalamud Windowing API | — | Not needed: the plugin has no windows. |
@@ -53,10 +53,10 @@ Checked on 2026-11-12 against the rules for the official plugin repository ([goa
 | Owner tested the plugin | ✅ ongoing | In-game tests (#92, `docs/manual-tests.md`). |
 | One plugin per PR, from its own branch | To do | |
 
-## Issues to open
+## Follow-up issues
 
-1. **Keep the version in the csproj.** Set `<Version>` to the real version, bump it in each release commit, and have `release.yml` check that the tag matches the csproj instead of overriding it. Update DEVELOPMENT.md section 8.
-2. **Prepare the D17 submission.** Write `manifest.toml` and copy the icon. The owner writes the PR description and AI disclosure, and confirms whether the icon contains any AI-generated parts.
-3. **Decide the custom repo's future** after the plugin is official. Options: keep `repo.json` for early builds, or retire it and tell users to switch. The docs don't make this a rule; it's to avoid users having the plugin from two sources.
+1. **Keep the version in the csproj** (#110, done). Set `<Version>` to the real version, bump it in each release commit, and have `release.yml` check that the tag matches the csproj instead of overriding it. Update DEVELOPMENT.md section 8.
+2. **Prepare the D17 submission** (#111). Write `manifest.toml` and copy the icon. The owner writes the PR description and AI disclosure, and confirms whether the icon contains any AI-generated parts.
+3. **Decide the custom repo's future** (#112) after the plugin is official. Options: keep `repo.json` for early builds, or retire it and tell users to switch. The docs don't make this a rule; it's to avoid users having the plugin from two sources.
 
 Can't be checked until submission: the build bot (Plogon) building the plugin with no internet access. The D17 PR runs that build automatically.

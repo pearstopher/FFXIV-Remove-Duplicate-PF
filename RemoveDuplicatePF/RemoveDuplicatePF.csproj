@@ -5,8 +5,9 @@
     <ProjectReference Include="..\RemoveDuplicatePF.Core\RemoveDuplicatePF.Core.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <!-- Local builds use this. Releases override it from the tag (v1.2.3 -> 1.2.3.0), see .github/workflows/release.yml. -->
-    <Version>1.1.2.0</Version>
+    <!-- The plugin version. Bump it in the release commit; release.yml fails if the tag doesn't match (v1.2.3 -> 1.2.3.0).
+         It lives here because the official Dalamud repo builds this file as committed (#110). -->
+    <Version>1.2.2.0</Version>
     <!-- Manifest fields (see https://github.com/goatcorp/DalamudPackager) -->
     <Author>Ane Mora</Author>
     <Name>Remove PF Duplicates</Name>
