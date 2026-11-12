@@ -1,0 +1,9 @@
+# Draft of testing/live/RemoveDuplicatePF/manifest.toml for goatcorp/DalamudPluginsD17 (#111).
+# Not submitted yet: submitting is #115, the last step, and needs the owner's go-ahead.
+# See README.md in this folder.
+[plugin]
+repository = "https://github.com/pearstopher/FFXIV-Remove-PF-Duplicates.git"
+commit = "FILL-IN-AT-SUBMISSION"
+owners = ["pearstopher"]
+project_path = "RemoveDuplicatePF"
+changelog = "First official release. Each repeated Party Finder ad is shown once with a [N] count of its copies, and the window title shows how many were hidden."
