@@ -174,6 +174,16 @@ When the game or Dalamud updates:
    3. Release a new version (section 8), for example `v1.0.1`. The release workflow puts the new `DalamudApiLevel` into `repo.json` automatically, and players get the update from the custom repo.
 4. **If only game structs changed** (the build passes but something misbehaves in game), check `/xllog` for `Party Finder title text node not found` or other errors. The title and prefix code (`TitleUpdater`, `ListingPrefixer`) is what depends on the game's UI layout.
 
+## 10. Updates in the official repo
+
+The plugin isn't in the official Dalamud repo yet. The submission files are drafted in [docs/official-repo-submission/](docs/official-repo-submission/README.md), and submitting is #115. Once it's accepted, updates work like this:
+
+- **The plugin starts in testing.** New plugins must go into `testing/live/` in [goatcorp/DalamudPluginsD17](https://github.com/goatcorp/DalamudPluginsD17). When it's working there, a PR moves the folder to `stable/`. Moving needs no version bump or new commit.
+- **Each update is a PR to DalamudPluginsD17**, from a new branch, changing `commit` (and `changelog`) in the plugin's `manifest.toml`. One plugin per PR.
+- **Updates can go straight to stable** after that. There's no requirement to ship testing builds; testing the update yourself (section 7, the manual tests) is enough.
+- **Bump `<Version>` in the csproj first** (section 8). The build bot builds the commit exactly as it is, so the version must already be right in that commit.
+- **Players get it after the Dalamud team reviews and merges the PR**, so official updates aren't instant. The GitHub release from section 8 only updates the custom repo (`repo.json`).
+
 ## Troubleshooting
 
 | Problem | Fix |
