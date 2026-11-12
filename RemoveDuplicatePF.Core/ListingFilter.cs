@@ -44,10 +44,14 @@ public sealed class ListingFilter
     /// The current <c>args.Visible</c> value. It is shared with other plugins,
     /// so a listing another plugin already hid stays hidden and is not counted.
     /// </param>
-    public bool Decide(int batchNumber, ulong listingId, string? description, bool currentlyVisible)
+    /// <param name="gameListEmpty">
+    /// Whether the game's displayed list was empty when the listing arrived (#72);
+    /// see <see cref="ResultSetBoundary.IsNewResultSet"/>. Leave <c>false</c> when unknown.
+    /// </param>
+    public bool Decide(int batchNumber, ulong listingId, string? description, bool currentlyVisible, bool gameListEmpty = false)
     {
         // Track result-set boundaries for every listing, including ones another plugin hid.
-        if (this.boundary.IsNewResultSet(batchNumber, listingId))
+        if (this.boundary.IsNewResultSet(batchNumber, listingId, gameListEmpty))
             this.StartNewSet();
 
         var set = this.history.First!.Value;

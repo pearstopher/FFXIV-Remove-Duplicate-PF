@@ -49,6 +49,8 @@ Counts are **per page**: duplicates on different pages are not combined (see `do
    - **Expected:** each page shows one copy per duplicate group *on that page*. A description that also appears on the previous page is still shown once on this page.
 6. With Debug+ logging, check the `PF result set #…` lines for one refresh and one page change.
    - **Expected:** one new line each time, with a higher `#` number, and counts for that page only.
+7. **Small categories (#72):** switch to a category with **4 or fewer** listings (they arrive as one small batch).
+   - **Expected:** a new `PF result set #…` line for it, with only that category's listings counted. Nothing in it is hidden because of the previous category, and the title doesn't show the previous page's count.
 
 ## Coloured [N] prefix (#9)
 
