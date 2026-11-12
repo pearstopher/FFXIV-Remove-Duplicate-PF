@@ -19,7 +19,8 @@ namespace RemoveDuplicatePF;
 /// Rows are matched to groups by their description text (see <see cref="RowPrefixMatcher"/>),
 /// so this doesn't depend on the row layout or listing order. The window reuses rows
 /// as you scroll and rewrites their text, so the scan runs after list updates and
-/// otherwise at most every <see cref="ScanInterval"/>.
+/// otherwise at most every <see cref="ScanInterval"/>. A node is only parsed again when its text
+/// or the <c>[N]</c> counts have changed since it was last handled (#95).
 /// </remarks>
 internal sealed unsafe class ListingPrefixer : IDisposable
 {
@@ -35,6 +36,13 @@ internal sealed unsafe class ListingPrefixer : IDisposable
 
     // Row texts already reported as near misses, so each is logged once (#54 diagnostics).
     private readonly HashSet<string> loggedNearMisses = new(StringComparer.Ordinal);
+
+    // Text node -> the text it had after it was last handled, and the group it belongs to (or null).
+    // Handling depends only on the text and the [N] counts, so an unchanged node is skipped while
+    // the counts are unchanged. Cleared when the counts or the window change.
+    private readonly Dictionary<nint, (byte[] Text, string? Description)> handledNodes = new();
+    private Dictionary<string, int> handledGroups = new(StringComparer.Ordinal);
+    private nint handledAddon;
 
     public ListingPrefixer(ListingFilter filter)
     {
@@ -77,20 +85,30 @@ internal sealed unsafe class ListingPrefixer : IDisposable
             if (addon == null || !addon->IsVisible)
                 return;
 
-            // Use the result set for the page on screen, not just the newest one (#51). Its [N] include
-            // copies hidden on later pages of the search (#81).
+            // Use the result set for the page on screen, not just the newest one (#51). Each [N] counts
+            // every copy found so far in the search, including copies on other pages (#88).
             var groups = DisplayedListings.ResultSetOnScreen(this.filter).Prefixes;
             if (groups.Count == 0)
                 return;
 
-            var matched = new HashSet<string>(StringComparer.Ordinal);
+            if ((nint)addon != this.handledAddon || !SameGroups(groups, this.handledGroups))
+            {
+                this.handledNodes.Clear();
+                this.handledGroups = new Dictionary<string, int>(groups, StringComparer.Ordinal);
+                this.handledAddon = (nint)addon;
+            }
+
+            // The summary and near-miss checks are only for the Debug log.
+            var debug = Plugin.DebugLogging;
+            var matched = debug ? new HashSet<string>(StringComparer.Ordinal) : null;
             ForEachTextNode(&addon->UldManager, node =>
             {
-                if (this.ApplyPrefix(node, groups) is { } description)
-                    matched.Add(description);
+                if (this.HandleNode(node, groups, debug) is { } description)
+                    matched?.Add(description);
             });
 
-            this.LogSummary(groups, matched);
+            if (matched is not null)
+                this.LogSummary(groups, matched);
         }
         catch (Exception ex)
         {
@@ -99,19 +117,35 @@ internal sealed unsafe class ListingPrefixer : IDisposable
     }
 
     // Returns the group's description if the node belongs to a duplicate group (whether or not
-    // it needed changing), otherwise null.
-    private string? ApplyPrefix(AtkTextNode* node, IReadOnlyDictionary<string, int> groups)
+    // it needed changing), otherwise null. Skips nodes already handled with the same text.
+    private string? HandleNode(AtkTextNode* node, IReadOnlyDictionary<string, int> groups, bool debug)
     {
         var bytes = node->NodeText.AsSpan();
         if (bytes.Length == 0)
             return null;
 
+        if (this.handledNodes.TryGetValue((nint)node, out var handled) && bytes.SequenceEqual(handled.Text))
+            return handled.Description;
+
+        var description = this.ApplyPrefix(node, bytes, groups, debug);
+        this.handledNodes[(nint)node] = (node->NodeText.AsSpan().ToArray(), description);
+        return description;
+    }
+
+    private static bool SameGroups(IReadOnlyDictionary<string, int> a, IReadOnlyDictionary<string, int> b) =>
+        a.Count == b.Count && a.All(g => b.TryGetValue(g.Key, out var size) && size == g.Value);
+
+    // Returns the group's description if the node belongs to a duplicate group (whether or not
+    // it needed changing), otherwise null.
+    private string? ApplyPrefix(AtkTextNode* node, ReadOnlySpan<byte> bytes, IReadOnlyDictionary<string, int> groups, bool debug)
+    {
         var current = SeString.Parse(bytes);
         var rowText = current.TextValue;
         var decision = RowPrefixMatcher.Decide(rowText, groups);
         if (decision is null)
         {
-            this.LogNearMiss(rowText, groups);
+            if (debug)
+                this.LogNearMiss(rowText, groups);
             return null;
         }
 
@@ -194,7 +228,7 @@ internal sealed unsafe class ListingPrefixer : IDisposable
     // Groups scrolled out of view are expected under "not on screen".
     private void LogSummary(IReadOnlyDictionary<string, int> groups, HashSet<string> matched)
     {
-        // Each group with its [N], which includes copies hidden on later pages (#81).
+        // Each group with its [N], which counts copies on every page of the search (#88).
         string Describe(string d) => $"{Short(d)} ×{groups[d]}";
         var prefixed = groups.Keys.Where(matched.Contains).Select(Describe).OrderBy(d => d, StringComparer.Ordinal);
         var missing = groups.Keys.Where(d => !matched.Contains(d)).Select(Describe).OrderBy(d => d, StringComparer.Ordinal);

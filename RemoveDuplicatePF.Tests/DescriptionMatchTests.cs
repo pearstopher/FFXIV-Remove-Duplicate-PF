@@ -40,7 +40,7 @@ public class DescriptionMatchTests
         Assert.True(this.tracker.Observe(1, "Come to my venue tonight! Doors 9pm ST"));
         Assert.True(this.tracker.Observe(2, "Come to my VENUE tonight! Doors 9pm ST"));
 
-        Assert.Equal(0, this.tracker.HiddenCount);
+        Assert.Equal(1, this.tracker.GroupSize(1));
     }
 
     [Fact]
@@ -53,7 +53,8 @@ public class DescriptionMatchTests
         Assert.False(this.tracker.Observe(4, "Join our FC!"));
 
         Assert.Equal(2, this.tracker.GroupSize(1));
-        Assert.Equal(1, this.tracker.HiddenCount);
+        Assert.Equal(1, this.tracker.GroupSize(2));
+        Assert.Equal(1, this.tracker.GroupSize(3));
     }
 
     [Fact]
@@ -68,10 +69,11 @@ public class DescriptionMatchTests
     [Fact]
     public void Groups_on_screen_use_the_kept_listings_full_description()
     {
-        this.tracker.Observe(1, "Come to my venue tonight! Doors 9pm ST");
-        this.tracker.Observe(2, "Come to my venue tonight! Doors 10pm ST");
+        var filter = new ListingFilter();
+        filter.Decide(1, 1, "Come to my venue tonight! Doors 9pm ST", true);
+        filter.Decide(0, 2, "Come to my venue tonight! Doors 10pm ST", true);
 
-        var groups = this.tracker.DuplicateGroupsByDescription;
+        var groups = filter.ForDisplayed(Array.Empty<ulong>()).Prefixes;
 
         Assert.Equal(new Dictionary<string, int> { ["Come to my venue tonight! Doors 9pm ST"] = 2 }, groups);
         Assert.Equal("[2] ", RowPrefixMatcher.Decide("Come to my venue tonight! Doors 9pm ST", groups)?.Prefix.Text);
@@ -84,6 +86,6 @@ public class DescriptionMatchTests
 
         Assert.True(this.tracker.Observe(1, spaces));
         Assert.True(this.tracker.Observe(2, spaces));
-        Assert.Equal(0, this.tracker.HiddenCount);
+        Assert.Equal(0, this.tracker.GroupSize(1));
     }
 }

@@ -177,7 +177,9 @@ Previous and Refresh on page 2 both move the page index from 1 to 0, so the inde
 - last click anything else (Refresh, a tab, ...) → new search;
 - no click → same search (a background re-fetch, #51), but only if clicks have been seen since the window opened; otherwise new search, in case clicks aren't reaching the plugin.
 
-Only Next and Previous are matched by number, so if a patch renumbers the buttons, the plugin falls back to treating every page 1 as a new search (the #75 behaviour) rather than keeping a stale memory. The `PF result set` line shows `(page 1, new search)` or `(page 1, same search)`.
+Only Next and Previous are matched by number, so if a patch renumbers the buttons, the plugin falls back to treating every result set as a new search (each page counted on its own) rather than keeping a stale memory. Since #88 pages aren't tracked, so this applies to every result set, not just page 1. The `PF result set` line shows `(new search)` or `(same search)` (before #88: `(page 1, new search)` / `(page 1, same search)`).
+
+Known gaps, tracked as low priority: changing search conditions isn't seen as a new search (#93), and a fully hidden small page can hide the start of the next small set (#94).
 
 ## 9. Pages overlap, and Previous can land early (#84)
 

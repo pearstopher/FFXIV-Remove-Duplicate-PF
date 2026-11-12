@@ -2,9 +2,17 @@ using RemoveDuplicatePF.Core;
 
 namespace RemoveDuplicatePF.Tests;
 
+/// <summary>
+/// Basic <see cref="ListingFilter.Decide"/> behaviour. No window open or button clicks are noted
+/// here, so every result set starts a new search (see <see cref="SearchStart"/>); searches that
+/// span several pages are covered by <see cref="SearchWideTests"/>.
+/// </summary>
 public class ListingFilterTests
 {
     private readonly ListingFilter filter = new();
+
+    // Listings hidden in the newest result set.
+    private int Hidden => this.filter.NewestSummary.Hidden;
 
     [Fact]
     public void First_listing_shown_and_later_duplicates_hidden()
@@ -13,7 +21,7 @@ public class ListingFilterTests
         Assert.False(this.filter.Decide(1, 2, "Venue", currentlyVisible: true));
         Assert.True(this.filter.Decide(1, 3, "Other", currentlyVisible: true));
 
-        Assert.Equal(1, this.filter.Search.HiddenCount);
+        Assert.Equal(1, this.Hidden);
     }
 
     [Theory]
@@ -43,7 +51,8 @@ public class ListingFilterTests
 
         Assert.Equal(0, this.filter.Search.GroupSize(1));
         Assert.Equal(2, this.filter.Search.GroupSize(2));
-        Assert.Equal(1, this.filter.Search.HiddenCount);
+        Assert.Equal(1, this.Hidden);
+        Assert.Equal(1, this.filter.NewestSummary.HiddenByOthers);
     }
 
     [Fact]
@@ -52,11 +61,11 @@ public class ListingFilterTests
         this.filter.Decide(1, 1, "Venue", true);
         this.filter.Decide(1, 2, "Venue", true);
         this.filter.Decide(0, 3, "Venue", true);
-        Assert.Equal(2, this.filter.Search.HiddenCount);
+        Assert.Equal(2, this.Hidden);
 
         // Refresh: the same listings come back, starting at segment 1.
         Assert.True(this.filter.Decide(1, 1, "Venue", true));
-        Assert.Equal(0, this.filter.Search.HiddenCount);
+        Assert.Equal(0, this.Hidden);
         Assert.Equal(1, this.filter.Search.GroupSize(1));
     }
 
@@ -72,14 +81,15 @@ public class ListingFilterTests
     }
 
     [Fact]
-    public void Each_page_is_counted_separately()
+    public void Without_any_clicks_each_result_set_is_a_new_search()
     {
-        // Page 1: two copies. Page 2 (new set starting at 1): one more copy is shown, not hidden.
+        // Clicks may not be reaching the plugin, so nothing carries over between result sets (#80).
         this.filter.Decide(1, 1, "Venue", true);
         this.filter.Decide(0, 2, "Venue", true);
 
         Assert.True(this.filter.Decide(1, 51, "Venue", true));
-        Assert.Equal(0, this.filter.Search.HiddenCount);
+        Assert.Equal(0, this.Hidden);
+        Assert.True(this.filter.NewestSummary.NewSearch);
     }
 
     [Fact]
@@ -90,7 +100,7 @@ public class ListingFilterTests
 
         // New set starts with a listing another plugin hid; tracking still resets.
         Assert.False(this.filter.Decide(1, 9, "Other", currentlyVisible: false));
-        Assert.Equal(0, this.filter.Search.HiddenCount);
+        Assert.Equal(0, this.Hidden);
         Assert.True(this.filter.Decide(1, 2, "Venue", true));
     }
 }

@@ -169,14 +169,14 @@ public class RowPrefixMatcherTests
     }
 
     [Fact]
-    public void Works_with_tracker_groups()
+    public void Works_with_the_filters_prefixes()
     {
-        var tracker = new DuplicateTracker();
-        tracker.Observe(1, "Venue");
-        tracker.Observe(2, "Venue");
-        tracker.Observe(3, "Solo");
+        var filter = new ListingFilter();
+        filter.Decide(1, 1, "Venue", true);
+        filter.Decide(1, 2, "Venue", true);
+        filter.Decide(0, 3, "Solo", true);
 
-        var groups = tracker.DuplicateGroupsByDescription;
+        var groups = filter.ForDisplayed(Array.Empty<ulong>()).Prefixes;
 
         Assert.Equal("[2] ", RowPrefixMatcher.Decide("Venue", groups)?.Prefix.Text);
         Assert.Null(RowPrefixMatcher.Decide("Solo", groups));

@@ -17,25 +17,8 @@ public class SearchWideTests
 
     public SearchWideTests() => this.filter.NoteWindowOpened();
 
-    // Feeds one page the way the game sends it (segments of 4: 1, 2, ..., last one 0; the game's
-    // list empty only during the first segment) and returns each listing's visibility.
-    private bool[] Page(params (ulong Id, string? Description)[] listings)
-    {
-        var result = new List<bool>();
-        var segments = listings.Chunk(ResultSetBoundary.MaxListingsPerSegment).ToArray();
-        for (var s = 0; s < segments.Length; s++)
-        {
-            var batch = s == segments.Length - 1 ? 0 : s + 1;
-            foreach (var (id, description) in segments[s])
-                result.Add(this.filter.Decide(batch, id, description, true, gameListEmpty: s == 0));
-        }
-
-        // The window shows the page before the player moves on.
-        if (result.Any(visible => visible))
-            this.filter.NoteGameListShown();
-
-        return result.ToArray();
-    }
+    // Feeds one page the way the game sends it and returns each listing's visibility.
+    private bool[] Page(params (ulong Id, string? Description)[] listings) => GameFeed.Page(this.filter, listings);
 
     // A new listing (new ID) with this description.
     private (ulong, string?) New(string? description) => (this.nextId++, description);
