@@ -1,8 +1,8 @@
 # Official Dalamud repo standards (#98)
 
-The rules for the official plugin repository ([goatcorp/DalamudPluginsD17](https://github.com/goatcorp/DalamudPluginsD17)), and how the plugin meets them. First checked on 2026-11-12 (#99). **Re-checked on 2026-11-12 (#121)** against every page in the submission page's "Before submitting your plugin" box, read again from scratch, plus a review of all the plugin's code. The plugin is only in the custom repo (`repo.json`) for now.
+The rules for the official plugin repository ([goatcorp/DalamudPluginsD17](https://github.com/goatcorp/DalamudPluginsD17)), and how the plugin meets them. First checked on 2026-11-12 (#99). **Re-checked on 2026-11-12 (#121)** against every page in the submission page's "Before submitting your plugin" box, read again from scratch, plus a review of all the plugin's code. Submitted on 2026-11-12 as [goatcorp/DalamudPluginsD17#9582](https://github.com/goatcorp/DalamudPluginsD17/pull/9582) (testing track) and waiting for review; until it's accepted, the plugin is only in the custom repo (`repo.json`).
 
-**Summary:** the plugin meets every requirement. The final review found no problems to fix: the code only reads Party Finder data and changes the text drawn in the Party Finder window, it has no hooks, network access or automation, and it puts the window's text back when it unloads. The plugin is ready to submit (#115, only with the owner's go-ahead).
+**Summary:** the plugin meets every requirement. The final review found no problems to fix: the code only reads Party Finder data and changes the text drawn in the Party Finder window, it has no hooks, network access or automation, and it puts the window's text back when it unloads. The owner submitted it (#115).
 
 ## Sources
 
@@ -113,7 +113,7 @@ All code in `RemoveDuplicatePF/` and `RemoveDuplicatePF.Core/` was read. `Remove
 | Rule | Status | What's needed |
 | --- | --- | --- |
 | New plugins start in `testing/live/` | ✅ | Submitted as [`testing/live/RemoveDuplicatePF/`](https://github.com/pearstopher/DalamudPluginsD17/tree/remove-pf-duplicates/testing/live/RemoveDuplicatePF), building the v1.2.3 release commit `39f16f3d2fd15aa1e57a80d36f07758606aa33ed` (#115, #126). |
-| One plugin per PR, from its own branch | ✅ | Only this plugin's two files, on the `remove-pf-duplicates` branch of the owner's fork (#115). |
+| One plugin per PR, from its own branch | ✅ | [goatcorp/DalamudPluginsD17#9582](https://github.com/goatcorp/DalamudPluginsD17/pull/9582): only this plugin's two files, from the `remove-pf-duplicates` branch of the owner's fork (#115). The manifest check passed; the first build waits for the approval team to enable builds for a first-time submitter. |
 
 ## Updates after acceptance
 
@@ -135,6 +135,6 @@ At submission the owner removed the README's custom repo install instructions (#
 3. **AI disclosure and icon check** (#114, done).
 4. **Decide the custom repo's future** (#112, done).
 5. **Final review against the requirements** (#121, done). No problems found.
-6. **Submit** (#115). The very last step, and only with the owner's go-ahead.
+6. **Submit** (#115). Submitted by the owner on 2026-11-12 as [goatcorp/DalamudPluginsD17#9582](https://github.com/goatcorp/DalamudPluginsD17/pull/9582); waiting for review.
 
 Can't be checked until submission: the build bot (Plogon) building the plugin with no internet access. The D17 PR runs that build automatically.

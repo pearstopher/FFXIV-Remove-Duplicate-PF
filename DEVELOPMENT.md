@@ -176,7 +176,7 @@ When the game or Dalamud updates:
 
 ## 10. Updates in the official repo
 
-The plugin was submitted to the official Dalamud repo in #115: its files are [`testing/live/RemoveDuplicatePF/`](https://github.com/pearstopher/DalamudPluginsD17/tree/remove-pf-duplicates/testing/live/RemoveDuplicatePF) (`manifest.toml` and `images/icon.png`) on the `remove-pf-duplicates` branch of the owner's fork. Once it's accepted, updates work like this:
+The plugin was submitted to the official Dalamud repo on 2026-11-12 as [goatcorp/DalamudPluginsD17#9582](https://github.com/goatcorp/DalamudPluginsD17/pull/9582) (#115), and is waiting for review. Its files are [`testing/live/RemoveDuplicatePF/`](https://github.com/pearstopher/DalamudPluginsD17/tree/remove-pf-duplicates/testing/live/RemoveDuplicatePF) (`manifest.toml` and `images/icon.png`) on the `remove-pf-duplicates` branch of the owner's fork. Once it's accepted, updates work like this:
 
 - **The plugin starts in testing.** New plugins must go into `testing/live/` in [goatcorp/DalamudPluginsD17](https://github.com/goatcorp/DalamudPluginsD17). When it's working there, a PR moves the folder to `stable/`. Moving needs no version bump or new commit.
 - **Each update is a PR to DalamudPluginsD17**, from a new branch, changing `commit` (and `changelog`) in the plugin's `manifest.toml`. One plugin per PR.
