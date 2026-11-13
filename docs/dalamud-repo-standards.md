@@ -126,7 +126,7 @@ New plugins start in `testing/live/`; a later PR moves the folder to `stable/` w
 - `repo.json`, the release workflow that updates it, and the plugin's place in the `ffxiv-plugins` combined repo all stay as they are, as a backup.
 - The README's Install section switches to the official instructions (`/xlplugins` → search for **Remove PF Duplicates**, no custom repo URL). The project itself no longer tells anyone to add the custom repo.
 
-This happens in a new issue after the official PR is accepted (#115), not before.
+At submission the owner removed the README's custom repo install instructions (#130). For now the README has no install section; which instructions to add back depends on whether the plugin is accepted.
 
 ## Follow-up issues
 
