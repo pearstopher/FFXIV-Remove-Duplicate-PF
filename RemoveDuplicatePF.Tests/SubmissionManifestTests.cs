@@ -49,4 +49,12 @@ public class SubmissionManifestTests
         Assert.Matches(new Regex(@"^\[\s*""[^""]+"""), Field("owners"));
         Assert.Matches(new Regex(@"^""[^""]+""$"), Field("changelog"));
     }
+
+    // The commit the build bot builds must be a full 40-character hash, not a placeholder (#126).
+    // That it's the v1.2.3 tagged commit is checked by hand: CI's shallow checkout has no tags.
+    [Fact]
+    public void Commit_is_a_full_hash()
+    {
+        Assert.Matches(new Regex(@"^""[0-9a-f]{40}""$"), Field("commit"));
+    }
 }
