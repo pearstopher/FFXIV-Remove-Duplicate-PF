@@ -11,7 +11,7 @@ namespace RemoveDuplicatePF.Core;
 public sealed record CountPrefix(string Text, ushort ColorId)
 {
     /// <summary>
-    /// <c>UIColor</c> row used for the prefix: a yellow tone that stands out
+    /// <c>UIColor</c> row used for the prefix: an orange tone that stands out
     /// from the regular white Party Finder description text.
     /// </summary>
     public const ushort DefaultColorId = 500;

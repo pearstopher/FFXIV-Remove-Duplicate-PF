@@ -11,6 +11,16 @@ The code is split into two folders. Both are built into the plugin and both run 
 - **[RemoveDuplicatePF/](../RemoveDuplicatePF/)** is the plugin itself. It talks to the game through Dalamud (the plugin framework): it hears about listings arriving, reads button clicks, and changes the text in the Party Finder window.
 - **[RemoveDuplicatePF.Core/](../RemoveDuplicatePF.Core/)** holds the decisions: which listings are duplicates, which copy to keep, and what number to show. It never touches the game directly, which is what lets it be unit tested outside the game.
 
+## What it touches in the game
+
+Everything the plugin does in the game, in one place:
+
+- **Hides listings** by setting the "visible" flag Dalamud gives each Party Finder listing as it arrives. This is Dalamud's built-in way to hide a listing (NoSoliciting uses the same one). Nothing is sent to the server.
+- **Changes text in the Party Finder window:** the `[N] ` in front of a row, and the count in the title. This is the only thing it writes to the game, and it puts the original text back when it unloads.
+- **Reads, without changing:** the window opening, button clicks in the window, and which listing IDs the window is showing.
+
+It doesn't use hooks, send anything over the network, send chat or commands, click anything for you, read player names or IDs, or save any files. The full list, checked against the official repo's rules, is in [dalamud-repo-standards.md, section 5](dalamud-repo-standards.md#5-code-review-how-the-plugin-touches-the-game-121).
+
 ## Files in `RemoveDuplicatePF/` (the plugin)
 
 ### [RemoveDuplicatePF/Plugin.cs](../RemoveDuplicatePF/Plugin.cs): start and stop
@@ -18,7 +28,7 @@ The code is split into two folders. Both are built into the plugin and both run 
 The entry point Dalamud calls when the plugin loads.
 
 - **On load:** creates one shared `ListingFilter` (see `RemoveDuplicatePF.Core`) and hands it to the four parts that talk to the game: `PartyFinderListener`, `ListingPrefixer`, `TitleUpdater` and `SearchEvents`. Writes a line to the log saying which build loaded and when it was built.
-- **On unload:** shuts each part down in turn. If one fails, the others are still shut down, so nothing is left attached to the game.
+- **On unload:** shuts each part down in turn. If one fails, the others are still shut down, so nothing is left attached to the game. The `[N]` prefixes and title count are removed straight away, but hidden listings only come back the next time the list refreshes: the game has already dropped them, and the plugin can't bring them back.
 - The plugin has no settings window, commands or menus.
 
 ### [RemoveDuplicatePF/PartyFinderListener.cs](../RemoveDuplicatePF/PartyFinderListener.cs): show or hide each listing
@@ -42,7 +52,7 @@ The game can fetch another page in the background while you're still looking at 
 
 ### [RemoveDuplicatePF/ListingPrefixer.cs](../RemoveDuplicatePF/ListingPrefixer.cs): the [N] in front of rows
 
-Adds the yellow `[N] ` to the shown copy of each duplicated ad.
+Adds the orange `[N] ` to the shown copy of each duplicated ad.
 
 - **When it runs:** whenever the list changes, and otherwise at most every quarter second.
 - **How it finds rows:** it walks through every piece of text in the Party Finder window and compares it to the descriptions of ads that have copies (using `RowPrefixMatcher`). Matching by text means it doesn't depend on row order or layout. The window reuses rows as you scroll, so it checks again each time.
@@ -53,7 +63,7 @@ Adds the yellow `[N] ` to the shown copy of each duplicated ad.
 
 ### [RemoveDuplicatePF/TitleUpdater.cs](../RemoveDuplicatePF/TitleUpdater.cs): the count in the title
 
-Changes the window title to e.g. **Party Finder (7 duplicates hidden)**, with the count in the same yellow as the prefixes.
+Changes the window title to e.g. **Party Finder (7 duplicates hidden)**, with the count in the same orange as the prefixes.
 
 - **When it runs:** whenever the list changes, and otherwise every quarter second, because the game sometimes rewrites the title.
 - The number is how many listings were hidden on the page on screen.
@@ -121,7 +131,7 @@ It also says what to do with the row: add the prefix, leave it (already correct)
 
 ### [RemoveDuplicatePF.Core/CountPrefix.cs](../RemoveDuplicatePF.Core/CountPrefix.cs): the [N] text and colour
 
-Builds the prefix text, e.g. `[3] `, and picks its colour (the game's yellow, colour 500). Nothing is shown for an ad with only one copy.
+Builds the prefix text, e.g. `[3] `, and picks its colour (the game's orange, colour 500). Nothing is shown for an ad with only one copy.
 
 ### [RemoveDuplicatePF.Core/TitleText.cs](../RemoveDuplicatePF.Core/TitleText.cs): the title wording
 
