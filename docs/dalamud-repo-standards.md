@@ -2,7 +2,7 @@
 
 Checked on 2026-11-12 against the rules for the official plugin repository ([goatcorp/DalamudPluginsD17](https://github.com/goatcorp/DalamudPluginsD17)). The plugin is only in the custom repo (`repo.json`) for now.
 
-**Summary:** the plugin's code and behavior follow the rules. The one build problem (the version number wasn't stored in the code) is fixed (#110). The rest is submission paperwork, mainly the AI disclosure, which only the owner can write.
+**Summary:** the plugin's code and behavior follow the rules. The one build problem (the version number wasn't stored in the code) is fixed (#110). The submission paperwork is ready too (#111, #114), so the plugin is ready to submit (#115, only with the owner's go-ahead).
 
 ## Sources
 
@@ -48,8 +48,8 @@ Checked on 2026-11-12 against the rules for the official plugin repository ([goa
 | Rule | Status | What's needed |
 | --- | --- | --- |
 | New plugins start in `testing/live/` | To do | PR adding `testing/live/RemoveDuplicatePF/manifest.toml` (`repository`, `commit`, `owners`, `project_path = "RemoveDuplicatePF"`, `changelog`) and `images/icon.png`. |
-| **AI disclosure in the PR, written by a person** | ❌ To do | Most of this plugin's code was written with Claude Code. The owner must say which level applies (probably **Copilot**: the owner plans, reviews and tests while the AI writes most of the code) in their own words. Copilot- and Auto-level submissions are reviewed at the team's discretion. The owner must be able to explain why the code works the way it does. Undisclosed AI use leads to a ban. |
-| AI-generated assets disclosed in the plugin description | Owner to confirm | The icon was supplied by the owner (#12). If any part of it was AI-generated, the plugin description must say so. The team prefers hand-made icons. |
+| AI disclosure in the PR, written by a person | ✅ | Done in #114: the owner wrote it, level **Copilot** (most of the code was written with Claude Code while the owner plans, reviews and tests). Saved in [official-repo-submission/ai-disclosure.md](official-repo-submission/ai-disclosure.md). Copilot-level submissions are reviewed at the team's discretion, and the owner must be able to explain why the code works the way it does. |
+| AI-generated assets disclosed in the plugin description | ✅ | Nothing to disclose: the owner made the icon by hand in Photopea (#114). |
 | Owner tested the plugin | ✅ ongoing | In-game tests (#92, `docs/manual-tests.md`). |
 | One plugin per PR, from its own branch | To do | |
 
@@ -69,8 +69,8 @@ This happens in a new issue after the official PR is accepted (#115), not before
 ## Follow-up issues
 
 1. **Keep the version in the csproj** (#110, done). Set `<Version>` to the real version, bump it in each release commit, and have `release.yml` check that the tag matches the csproj instead of overriding it. Update DEVELOPMENT.md section 8.
-2. **Prepare the D17 submission files** (#111). Draft `manifest.toml` and where each file goes, in [official-repo-submission/](official-repo-submission/README.md).
-3. **AI disclosure and icon check** (#114). The owner writes the PR description and AI disclosure, and confirms whether the icon contains any AI-generated parts.
+2. **Prepare the D17 submission files** (#111, done). Draft `manifest.toml` and where each file goes, in [official-repo-submission/](official-repo-submission/README.md).
+3. **AI disclosure and icon check** (#114, done). Disclosure written by the owner; the icon has no AI-generated parts.
 4. **Decide the custom repo's future** (#112, done). Keep it as a backup; after acceptance the README points to the official repo instead (see above).
 5. **Submit** (#115). The very last step, after #98 closes, and only with the owner's go-ahead.
 
