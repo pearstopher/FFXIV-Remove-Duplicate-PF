@@ -35,7 +35,7 @@ Checked against the manifest the build produces (`RemoveDuplicatePF.json`), whic
 | ApplicableVersion, LoadRequiredState, LoadSync, CanUnloadAsync, LoadPriority, AcceptsFeedback | No | ✅ | DalamudPackager defaults. |
 | CategoryTags, ImageUrls, FeedbackMessage | No | — | Not set; all optional. |
 | AssemblyVersion, InternalName, DalamudApiLevel | Filled in automatically | ✅ | 1.2.2.0 (from the csproj, #110), `RemoveDuplicatePF`, 15. The page says to leave these to DalamudPackager. |
-| Changelog | No | ✅ | In the draft `manifest.toml` ([official-repo-submission/](official-repo-submission/README.md)). The page warns a changelog only in the PR description doesn't reach the installer; the manifest is one of the two places that does. |
+| Changelog | No | ✅ | In the submitted [`manifest.toml`](https://github.com/pearstopher/DalamudPluginsD17/blob/remove-pf-duplicates/testing/live/RemoveDuplicatePF/manifest.toml) (#115). The page warns a changelog only in the PR description doesn't reach the installer; the manifest is one of the two places that does. |
 | `Dip17Channel` | Must not be set | ✅ | Not set. |
 
 ## 2. Technical considerations
@@ -66,7 +66,7 @@ Checked against the manifest the build produces (`RemoveDuplicatePF.json`), whic
 
 | Rule | Status | Why |
 | --- | --- | --- |
-| Disclose the level of AI use in the PR description | ✅ | Level **Copilot**, in [official-repo-submission/ai-disclosure.md](official-repo-submission/ai-disclosure.md) (#114). |
+| Disclose the level of AI use in the PR description | ✅ | Level **Copilot**, written by the owner (#114) and used as the submission PR's description (#115). |
 | Disclosures and PR descriptions written by a person | ✅ | Written by the owner and saved word for word; the only change was the level word, at the owner's request. |
 | AI-generated assets disclosed in the plugin description | ✅ | None: the owner made the icon by hand in Photopea. |
 | Tested personally before submitting | ✅ ongoing | In-game manual tests (`docs/manual-tests.md`, #92). Run them again on the exact commit being submitted. |
@@ -112,8 +112,8 @@ All code in `RemoveDuplicatePF/` and `RemoveDuplicatePF.Core/` was read. `Remove
 
 | Rule | Status | What's needed |
 | --- | --- | --- |
-| New plugins start in `testing/live/` | Ready | Draft `manifest.toml` in [official-repo-submission/](official-repo-submission/README.md); `commit` is filled in at submission. |
-| One plugin per PR, from its own branch | At submission | Done when the PR is made (#115). |
+| New plugins start in `testing/live/` | ✅ | Submitted as [`testing/live/RemoveDuplicatePF/`](https://github.com/pearstopher/DalamudPluginsD17/tree/remove-pf-duplicates/testing/live/RemoveDuplicatePF), building the v1.2.3 release commit `39f16f3d2fd15aa1e57a80d36f07758606aa33ed` (#115, #126). |
+| One plugin per PR, from its own branch | ✅ | Only this plugin's two files, on the `remove-pf-duplicates` branch of the owner's fork (#115). |
 
 ## Updates after acceptance
 
@@ -131,7 +131,7 @@ At submission the owner removed the README's custom repo install instructions (#
 ## Follow-up issues
 
 1. **Keep the version in the csproj** (#110, done).
-2. **Prepare the D17 submission files** (#111, done).
+2. **Prepare the D17 submission files** (#111, done). The draft folder was removed once its contents were in the submission (#129).
 3. **AI disclosure and icon check** (#114, done).
 4. **Decide the custom repo's future** (#112, done).
 5. **Final review against the requirements** (#121, done). No problems found.
