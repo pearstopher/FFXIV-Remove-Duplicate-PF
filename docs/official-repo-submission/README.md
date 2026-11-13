@@ -8,7 +8,7 @@ Files for submitting the plugin to the official Dalamud repo, [goatcorp/DalamudP
 | --- | --- | --- |
 | [manifest.toml](manifest.toml) | `testing/live/RemoveDuplicatePF/manifest.toml` | Set `commit` to the full hash of the commit being submitted. Delete the comment lines at the top. |
 | [images/icon.png](../../images/icon.png) | `testing/live/RemoveDuplicatePF/images/icon.png` | 512×512 PNG. The icon must be 64–512 px and square. |
-| The owner's AI disclosure (#114) | The PR description | Written by the owner, not by AI (AI Usage Policy). |
+| [ai-disclosure.md](ai-disclosure.md) | The PR description | The owner's AI disclosure (#114), written by the owner, not by AI (AI Usage Policy). Paste it exactly as written. The icon was made by hand in Photopea, so the plugin description needs no AI note. |
 
 New plugins must start in `testing/live/`. The folder is named after the plugin's internal name, `RemoveDuplicatePF`.
 
